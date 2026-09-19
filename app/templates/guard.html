@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VillaShield OS - Guard Terminal</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #F7FAFC; margin: 0; padding: 15px; color: #2D3748; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E2E8F0; padding-bottom: 15px; margin-bottom: 25px; }
+        .logout-btn { background: #E2E8F0; color: #4A5568; padding: 10px 16px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .panel-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #E2E8F0; border-radius: 6px; box-sizing: border-box; font-size: 16px; background: #F8FAFC; }
+        button { width: 100%; background: #2C5282; color: white; padding: 13px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; margin-top: 15px; cursor: pointer; }
+        .live-log-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #F8FAFC; border-left: 4px solid #CBD5E0; margin-bottom: 10px; font-size: 14px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .badge-PENDING { background: #FEFCBF; color: #744210; }
+        .badge-APPROVED { background: #C6F6D5; color: #22543D; animation: blink 1.2s infinite; }
+        .badge-DENIED { background: #FED7D7; color: #742A2A; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @media (min-width: 992px) { .grid { grid-template-columns: 1fr 1fr; } }
+    </style>
+    <script>
+        function startLiveTrackerPolling() {
+            setInterval(function() {
+                fetch('/api/v1/guard/live-tracker-json')
+                .then(response => response.json())
+                .then(data => {
+                    let container = document.getElementById("liveTrackerLogsBox");
+                    if(data.length === 0) {
+                        container.innerHTML = '<p style="color:#A0AEC0; text-align:center;">No active records.</p>';
+                        return;
+                    }
+                    let html = "";
+                    data.forEach(log => {
+                        let borderColor = log.status === "APPROVED" ? "#38A169" : (log.status === "DENIED" ? "#E53E3E" : "#D69E2E");
+                        html += `<div class="live-log-card" style="border-left-color: ${borderColor};">
+                            <div><strong>${log.name}</strong><br><span style="color:#718096; font-size:12px;">Destination ID Ref: ${log.villa_id} | ${log.purpose}</span></div>
+                            <span class="badge badge-${log.status}">${log.status}</span>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }).catch(err => console.log(err));
+            }, 5000);
+        }
+        window.onload = startLiveTrackerPolling;
+    </script>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1 style="color:#1A365D; margin:0; font-size:22px;">🔏 Main Gate Guard Access Terminal</h1>
+            <p style="color:#718096; margin:4px 0 0; font-size:14px;">Operator: <strong>{{ username }}</strong></p>
+        </div>
+        <a href="/logout-action" class="logout-btn">Log Out</a>
+    </div>
+
+    <!-- Check for query response success messages from attendance actions -->
+    {% if request.query_params.get('success') %}
+        <div style="background:#C6F6D5; color:#22543D; padding:12px; border-radius:6px; margin-bottom:20px; font-weight:bold; font-size:14px;">
+            📢 {{ request.query_params.get('success') }}
+        </div>
+    {% endif %}
+    {% if request.query_params.get('error') %}
+        <div style="background:#FED7D7; color:#742A2A; padding:12px; border-radius:6px; margin-bottom:20px; font-weight:bold; font-size:14px;">
+            ⚠️ {{ request.query_params.get('error') }}
+        </div>
+    {% endif %}
+
+    <div class="grid">
+        <!-- Left Side Column: Action Forms Layout -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Visitor Registry Panel Card -->
+            <div class="panel-card">
+                <h2>📋 Register Arriving Visitor</h2>
+                <form action="/visitor-register-action" method="POST">
+                    <label>Search & Select Destination Villa</label>
+                    <select name="villa_id" required style="cursor: pointer; background-color: #FFFDF5; border-color: #CBD5E0;">
+                        <option value="" disabled selected>-- Type No, Block or Owner Name --</option>
+                        {% for resident in residents %}
+                        <option value="{{ resident.id }}">
+                            {{ resident.villa_number }}-{{ resident.villa_block }}-{{ resident.owner_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <label>Visitor Full Name</label>
+                    <input type="text" name="visitor_name" required placeholder="e.g. Ram Singh (Vendor)">
+                    <label>Contact Mobile Number</label>
+                    <input type="text" name="phone_number" required placeholder="+91...">
+                    <label>Vehicle License Plate</label>
+                    <input type="text" name="vehicle_number" placeholder="Optional details">
+                    <label>Purpose of Entry</label>
+                    <select name="purpose">
+                        <option value="Delivery">Delivery / Courier</option>
+                        <option value="Guest">Personal Guest</option>
+                        <option value="Cab">Cab / Taxi</option>
+                        <option value="Maintenance">Maintenance Worker</option>
+                    </select>
+                    <button type="submit">Broadcast Request to Villa</button>
+                </form>
+            </div>
+
+            <!-- RESTORED: Staff Attendance Punch Card Panel (FIX FOR QUESTION 2) -->
+            <div class="panel-card" style="border-top: 4px solid #2B6CB0;">
+                <h2>⏰ Staff & Guard Attendance Terminal</h2>
+                <p style="font-size:13px; color:#718096; margin-top:-10px; margin-bottom:15px;">Input security PIN badge keys to clock your daily shift metrics check.</p>
+                <form action="/staff-punch-action" method="POST">
+                    <label>Enter Secret Staff Passcode PIN</label>
+                    <input type="password" name="passcode" required placeholder="••••" maxlength="6" style="letter-spacing: 5px; font-weight: bold; text-align: center;">
+                    <button type="submit" style="background: #2B6CB0;">Verify & Clock Timestamp</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Side Column: Live Auto-Polling Status Monitor Container -->
+        <div class="panel-card">
+            <h2>🚨 Live Gate Entry Status Tracker</h2>
+            <p style="font-size:13px; color:#A0AEC0; margin-top:-10px; margin-bottom:20px;">Silent tracking active. Wiped data inputs fixed.</p>
+            <div id="liveTrackerLogsBox">
+                <p style="color:#A0AEC0; text-align:center; font-size:14px; margin-top:40px;">Initializing connection data arrays...</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

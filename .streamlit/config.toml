@@ -1,0 +1,9 @@
+[server]
+# Force stream parameters to prevent Docker on Windows from dropping sockets
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+# Set continuous network heartbeats to tell Docker the stream is highly active
+websocketPingInterval = 1
+websocketPingTimeout = 3

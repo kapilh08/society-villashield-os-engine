@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VillaShield OS - Register Profile</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); width: 100%; max-width: 450px; box-sizing: border-box; }
+        h1 { color: #1A365D; font-size: 24px; text-align: center; margin: 0 0 20px 0; }
+        label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #E2E8F0; border-radius: 6px; box-sizing: border-box; font-size: 16px; background: #F8FAFC; }
+        button { width: 100%; background: #2B6CB0; color: white; padding: 13px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; margin-top: 25px; cursor: pointer; }
+        .res-fields { display: none; }
+    </style>
+    <script>
+        function toggleRoleFields() {
+            var role = document.getElementById("roleSelect").value;
+            var fields = document.getElementById("residentFieldsBlock");
+            fields.style.display = (role === "RESIDENT") ? "block" : "none";
+        }
+    </script>
+</head>
+<body>
+    <div class="card">
+        <h1>📝 Create Profile Account</h1>
+        <form action="/register-action" method="POST">
+            <label>Username (Login ID)</label>
+            <input type="text" name="username" required placeholder="e.g. villa_53a_owner">
+            
+            <label>Password</label>
+            <input type="password" name="password" required placeholder="••••••••">
+            
+            <label>Account Assignment Role</label>
+            <select name="role" id="roleSelect" onchange="toggleRoleFields()" required>
+                <option value="GUARD">Security Gate Guard Staff</option>
+                <option value="RESIDENT">Villa Resident Owner</option>
+            </select>
+
+            <div id="residentFieldsBlock" class="res-fields">
+                <label>Villa Number</label>
+                <input type="text" name="villa_number" placeholder="e.g. 53">
+                
+                <label>Villa Block / Structural Name</label>
+                <input type="text" name="villa_block" placeholder="e.g. A, B, Soham, Pushpa">
+                
+                <label>Owner Full Name</label>
+                <input type="text" name="owner_name" placeholder="e.g. Mr. Sharma">
+            </div>
+
+            <button type="submit">Finalize System Registration</button>
+        </form>
+    </div>
+</body>
+</html>

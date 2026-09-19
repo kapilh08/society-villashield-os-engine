@@ -1,0 +1,54 @@
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+from app.models.models import UserRole, VisitorStatus
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: UserRole
+    villa_number: Optional[str] = None
+    villa_block: Optional[str] = None
+    owner_name: Optional[str] = None
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    role: UserRole
+    villa_number: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class VisitorCreate(BaseModel):
+    villa_id: int
+    visitor_name: str
+    phone_number: str
+    vehicle_number: Optional[str] = None
+    purpose: str
+
+class VisitorOut(BaseModel):
+    id: int
+    villa_id: int
+    visitor_name: str
+    phone_number: str
+    vehicle_number: Optional[str] = None
+    purpose: str
+    status: VisitorStatus
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class VisitorAction(BaseModel):
+    status: VisitorStatus
+
+class StaffCreate(BaseModel):
+    full_name: str
+    role: str
+    passcode: str
+
+class StaffClockPayload(BaseModel):
+    passcode: str
