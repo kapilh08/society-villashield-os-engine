@@ -14,6 +14,12 @@ class VisitorStatus(str, enum.Enum):
     APPROVED = "APPROVED"
     DENIED = "DENIED"
 
+class InviteStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    USED = "USED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -21,9 +27,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False)
     
-    # Updated: Separating Villa tracking matrices cleanly
+    # Villa tracking fields
     villa_number = Column(String, nullable=True)
-    villa_block = Column(String, nullable=True) # To store e.g., 'A', 'B', 'Soham', 'Pushpa'
+    villa_block = Column(String, nullable=True) # e.g., 'A', 'B', 'Soham', 'Pushpa'
     owner_name = Column(String, nullable=True)  # Full name for guard search lookups
     
     fcm_token = Column(String, nullable=True)
@@ -36,7 +42,20 @@ class VisitorLog(Base):
     phone_number = Column(String, nullable=False)
     vehicle_number = Column(String, nullable=True)
     purpose = Column(String, nullable=False)
+    gate_name = Column(String, default="Main Gate", nullable=False)
+    photo_url = Column(String, nullable=True)
     status = Column(Enum(VisitorStatus), default=VisitorStatus.PENDING)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class PreApprovedInvite(Base):
+    __tablename__ = "pre_approved_invites"
+    id = Column(Integer, primary_key=True, index=True)
+    villa_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    guest_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=True)
+    otp_code = Column(String, unique=True, index=True, nullable=False) # e.g., '8492'
+    valid_until = Column(DateTime, nullable=False)
+    status = Column(Enum(InviteStatus), default=InviteStatus.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class DomesticStaff(Base):
@@ -53,4 +72,3 @@ class StaffAttendance(Base):
     staff_id = Column(Integer, ForeignKey("domestic_staff.id"), nullable=False)
     check_in = Column(DateTime, default=datetime.datetime.utcnow)
     check_out = Column(DateTime, nullable=True)
- 

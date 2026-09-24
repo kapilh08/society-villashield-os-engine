@@ -1,52 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VillaShield OS - Resident Panel</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F7FAFC; margin: 0; padding: 15px; color: #2D3748; box-sizing: border-box; }
-        .container { width: 100%; max-width: 600px; margin: 0 auto; box-sizing: border-box; }
-        
-        /* Responsive Header layout grid layout array mapping */
-        .header { display: flex; flex-direction: column; gap: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 15px; margin-bottom: 25px; }
-        .header-title h1 { color: #1A365D; margin: 0; font-size: 20px; font-weight: 700; }
-        .header-title p { color: #718096; margin: 4px 0 0; font-size: 14px; }
-        .logout-btn { background: #E2E8F0; color: #4A5568; padding: 10px 16px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; text-align: center; display: inline-block; width: fit-content; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
-        .logout-btn:hover { background: #CBD5E0; }
-        
-        h2 { font-size: 18px; color: #2C5282; margin: 0 0 15px 0; font-weight: 600; }
-        
-        /* Auto-scaling list wrapper alerts block matrix card items layout mapping */
-        .alert-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 5px solid #D69E2E; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; box-sizing: border-box; }
-        .details h3 { margin: 0 0 8px 0; color: #1A365D; font-size: 18px; }
-        .details p { margin: 4px 0; color: #4A5568; font-size: 14px; line-height: 1.4; }
-        
-        /* Standard high contrast touch-friendly buttons configuration */
-        .actions-form { margin: 0; width: 100%; }
-        .actions-group { display: flex; gap: 12px; width: 100%; }
-        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; color: white; font-size: 15px; transition: opacity 0.2s; text-align: center; -webkit-tap-highlight-color: transparent; }
-        .btn:active { opacity: 0.8; }
-        .btn-approve { background: #38A169; box-shadow: 0 2px 4px rgba(56,161,105,0.2); }
-        .btn-deny { background: #E53E3E; box-shadow: 0 2px 4px rgba(229,62,99,0.2); }
-        
-        .no-requests { text-align: center; background: white; padding: 40px 20px; border-radius: 12px; color: #718096; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .no-requests h3 { color: #2D3748; margin: 0 0 8px 0; }
-        .no-requests p { margin: 0; font-size: 14px; }
-        
-        /* Media Queries for tablets and wider mobile screen orientations scaling bounds */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #F7FAFC;
+            margin: 0;
+            padding: 15px;
+            color: #2D3748;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header-title h1 {
+            color: #1A365D;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            color: #718096;
+            margin: 4px 0 0;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #E2E8F0;
+            color: #4A5568;
+            padding: 10px 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            display: inline-block;
+            width: fit-content;
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .logout-btn:hover {
+            background: #CBD5E0;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #2C5282;
+            margin: 25px 0 15px 0;
+            font-weight: 600;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .alert-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #D69E2E;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-sizing: border-box;
+        }
+
+        .details h3 {
+            margin: 0 0 8px 0;
+            color: #1A365D;
+            font-size: 18px;
+        }
+
+        .details p {
+            margin: 4px 0;
+            color: #4A5568;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 4px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #4A5568;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #CBD5E0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+            background: #F8FAFC;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #38A169;
+            color: white;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .actions-form {
+            margin: 0;
+            width: 100%;
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            font-size: 15px;
+            transition: opacity 0.2s;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .btn-approve {
+            background: #38A169;
+            box-shadow: 0 2px 4px rgba(56, 161, 105, 0.2);
+        }
+
+        .btn-deny {
+            background: #E53E3E;
+            box-shadow: 0 2px 4px rgba(229, 62, 99, 0.2);
+        }
+
+        .no-requests {
+            text-align: center;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            color: #718096;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .otp-badge {
+            background: #EBF8FF;
+            color: #2B6CB0;
+            border: 1px dashed #3182CE;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            display: inline-block;
+        }
+
+        .wa-btn {
+            background: #25D366;
+            color: white;
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
         @media (min-width: 480px) {
-            .header { flex-direction: row; justify-content: space-between; align-items: center; }
-            .alert-card { flex-direction: row; justify-content: space-between; align-items: center; }
-            .actions-group { width: auto; min-width: 200px; }
+            .header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .alert-card {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .actions-group {
+                width: auto;
+                min-width: 200px;
+            }
         }
     </style>
-    <!-- Auto-refresh page context array logic updates consistently every 10 seconds -->
-    <meta http-equiv="refresh" content="10">
 </head>
+
 <body>
     <div class="container">
-        <!-- Responsive Header Segment Row Configuration block mapping -->
         <div class="header">
             <div class="header-title">
                 <h1>🏡 Villa Resident Authorization Panel</h1>
@@ -55,33 +240,125 @@
             <a href="/logout-action" class="logout-btn">Log Out</a>
         </div>
 
+        <!-- Feedback Banner -->
+        {% if request.query_params.get('success') %}
+        <div
+            style="background:#C6F6D5; color:#22543D; padding:12px; border-radius:8px; margin-bottom:20px; font-weight:bold; font-size:14px;">
+            📢 {{ request.query_params.get('success') }}
+        </div>
+        {% endif %}
+
+        <!-- Pre-Approved Guest Invite Form -->
+        <div class="card" style="border-top: 4px solid #38A169;">
+            <h2 style="margin-top: 0; color: #276749;">🎫 Pre-Approve Upcoming Guest (Instant Gate OTP)</h2>
+            <p style="font-size: 13px; color: #718096; margin-top: -8px; margin-bottom: 15px;">Generate a 4-digit gate
+                OTP pass code so your guests enter without waiting for live approval.</p>
+            <form action="/resident/create-invite-action" method="POST" id="inviteForm">
+                <label>Guest Full Name</label>
+                <input type="text" name="guest_name" required placeholder="e.g. Rahul Sharma" autocomplete="off">
+
+                <label>Guest Mobile Number (Optional)</label>
+                <input type="text" name="phone_number" placeholder="e.g. +91 9876543210" autocomplete="off">
+
+                <label>Pass Validity Duration</label>
+                <select name="duration_hours">
+                    <option value="6">Valid for 6 Hours</option>
+                    <option value="12" selected>Valid for 12 Hours</option>
+                    <option value="24">Valid for 24 Hours</option>
+                </select>
+
+                <button type="submit" class="submit-btn">Generate Pass & OTP Code</button>
+            </form>
+        </div>
+
+        <!-- Active Pre-Approved Passes List -->
+        {% if active_invites %}
+        <h2>📜 Active Pre-Approved Guest Passes</h2>
+        {% for invite in active_invites %}
+        <div class="card"
+            style="border-left: 5px solid {% if 'USED' in invite.status|string %}#A0AEC0{% else %}#38A169{% endif %}; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="font-size: 16px; color: #1A365D;">{{ invite.guest_name }}</strong><br>
+                <span style="font-size: 12px; color: #718096;">Status: <strong>{{ invite.status|string |
+                        replace('InviteStatus.', '') }}</strong></span><br>
+                {% if 'PENDING' in invite.status|string %}
+                <a href="https://wa.me/?text=Hi%20{{ invite.guest_name }},%20your%20gate%20pass%20code%20is%20*{{ invite.otp_code }}*%20for%20fast%20entry."
+                    target="_blank" class="wa-btn">
+                    💬 Share Code via WhatsApp
+                </a>
+                {% endif %}
+            </div>
+            <div style="text-align: right;">
+                <span class="otp-badge">{{ invite.otp_code }}</span>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
         <h2>🔔 Pending Gate Pass Approvals</h2>
-        
+
         {% if pending_visitors %}
-            {% for visitor in pending_visitors %}
-            <div class="alert-card">
-                <div class="details">
-                    <h3>{{ visitor.visitor_name }}</h3>
-                    <p><strong>Purpose:</strong> {{ visitor.purpose }}</p>
-                    <p><strong>Phone:</strong> {{ visitor.phone_number }}</p>
-                    <p><strong>Vehicle Info:</strong> {{ visitor.vehicle_number or 'Pedestrian Entry' }}</p>
+        {% for visitor in pending_visitors %}
+        <div class="alert-card">
+            <div class="details">
+                <h3>{{ visitor.visitor_name }}</h3>
+                <p><strong>Purpose:</strong> {{ visitor.purpose }}</p>
+                <p><strong>Phone:</strong> {{ visitor.phone_number }}</p>
+                <p><strong>Gate:</strong> {{ visitor.gate_name or 'Main Gate' }}</p>
+                <p><strong>Vehicle Info:</strong> {{ visitor.vehicle_number or 'Pedestrian Entry' }}</p>
+            </div>
+
+            <form method="POST" action="/resident-decision-action" class="actions-form">
+                <input type="hidden" name="log_id" value="{{ visitor.id }}">
+                <div class="actions-group">
+                    <button type="submit" name="decision" value="APPROVED" class="btn btn-approve">Approve</button>
+                    <button type="submit" name="decision" value="DENIED" class="btn btn-deny">Deny</button>
                 </div>
-                
-                <form method="POST" action="/resident-decision-action" class="actions-form">
-                    <input type="hidden" name="log_id" value="{{ visitor.id }}">
-                    <div class="actions-group">
-                        <button type="submit" name="decision" value="APPROVED" class="btn btn-approve">Approve</button>
-                        <button type="submit" name="decision" value="DENIED" class="btn btn-deny">Deny</button>
-                    </div>
-                </form>
-            </div>
-            {% endfor %}
+            </form>
+        </div>
+        {% endfor %}
         {% else %}
-            <div class="no-requests">
-                <h3>🎉 All Clear!</h3>
-                <p>No visitors are currently awaiting confirmation at the security gate.</p>
-            </div>
+        <div class="no-requests">
+            <h3 style="margin:0 0 5px 0; color:#2D3748;">🎉 All Clear!</h3>
+            <p style="margin:0; font-size:14px;">No visitors are currently awaiting confirmation at the security gate.
+            </p>
+        </div>
         {% endif %}
     </div>
+
+    <!-- Smart Auto-Refresh Script: Pauses refresh while resident is actively focusing or typing in form inputs -->
+    <script>
+        let isUserInteracting = false;
+
+        document.addEventListener('focusin', function (e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                isUserInteracting = true;
+            }
+        });
+
+        document.addEventListener('input', function (e) {
+            isUserInteracting = true;
+        });
+
+        document.addEventListener('focusout', function (e) {
+            setTimeout(function () {
+                let active = document.activeElement;
+                if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'SELECT' && active.tagName !== 'TEXTAREA')) {
+                    isUserInteracting = false;
+                }
+            }, 1000);
+        });
+
+        // Smart Refresh (30 Seconds interval, ONLY when NOT typing or focused on input)
+        setInterval(function () {
+            let activeEl = document.activeElement;
+            let isFocusedOnInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT' || activeEl.tagName === 'TEXTAREA');
+
+            if (!isUserInteracting && !isFocusedOnInput) {
+                location.reload();
+            }
+        }, 30000);
+    </script>
 </body>
+
 </html>

@@ -8,12 +8,25 @@ import io
 import csv
 
 from app.database import engine, Base, get_db, SessionLocal
-from app.routers import auth, visitors, staff, admin
+from app.routers import auth, visitors, staff, admin, invites
 from app.services.hardware_monitor import check_network_status
 from app.models import models
-from app.models.models import VisitorStatus, UserRole
+from app.models.models import VisitorStatus, UserRole, InviteStatus
+from sqlalchemy import text
 
 Base.metadata.create_all(bind=engine)
+
+# Auto-migration for existing PostgreSQL databases
+def auto_migrate_db():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE visitor_logs ADD COLUMN IF NOT EXISTS gate_name VARCHAR DEFAULT 'Main Gate';"))
+            conn.execute(text("ALTER TABLE visitor_logs ADD COLUMN IF NOT EXISTS photo_url VARCHAR;"))
+            conn.commit()
+    except Exception as e:
+        print(f"Migration note: {e}")
+
+auto_migrate_db()
 
 app = FastAPI(title="VillaShield OS Engine", version="2.0.0")
 
@@ -31,6 +44,7 @@ app.include_router(auth.router)
 app.include_router(visitors.router)
 app.include_router(staff.router)
 app.include_router(admin.router)
+app.include_router(invites.router)
 
 HARDWARE_STATUS_CACHE = [
     {"name": "Main Entrance Guard Camera Unit 1", "ip": "127.0.0.1", "status": "ONLINE 🟢"},
@@ -280,7 +294,8 @@ def dashboard_view(request: Request, db: Session = Depends(get_db)):
     elif role == "RESIDENT":
         current_res = db.query(models.User).filter(models.User.username == username).first()
         pending_visitors = db.query(models.VisitorLog).filter(models.VisitorLog.villa_id == current_res.id, models.VisitorLog.status == "PENDING").order_by(models.VisitorLog.id.desc()).all()
-        return templates.TemplateResponse("resident.html", {"request": request, "username": username, "pending_visitors": pending_visitors})
+        active_invites = db.query(models.PreApprovedInvite).filter(models.PreApprovedInvite.villa_id == current_res.id).order_by(models.PreApprovedInvite.id.desc()).all()
+        return templates.TemplateResponse("resident.html", {"request": request, "username": username, "pending_visitors": pending_visitors, "active_invites": active_invites})
 
     return RedirectResponse(url="/", status_code=303)
 
@@ -291,11 +306,91 @@ def guard_live_tracker_api(db: Session = Depends(get_db)):
     return [{"id": l.id, "name": l.visitor_name, "purpose": l.purpose, "villa_id": l.villa_id, "status": str(l.status).replace("VisitorStatus.", "")} for l in logs]
 
 @app.post("/visitor-register-action")
-def web_visitor_register(villa_id: int = Form(...), visitor_name: str = Form(...), phone_number: str = Form(...), vehicle_number: str = Form(None), purpose: str = Form(...), db: Session = Depends(get_db)):
-    new_log = models.VisitorLog(villa_id=villa_id, visitor_name=visitor_name, phone_number=phone_number, vehicle_number=vehicle_number, purpose=purpose, status=VisitorStatus.PENDING)
+def web_visitor_register(
+    villa_id: int = Form(...), 
+    visitor_name: str = Form(...), 
+    phone_number: str = Form(...), 
+    vehicle_number: str = Form(None), 
+    purpose: str = Form(...),
+    gate_name: str = Form("Main Gate"),
+    photo_url: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    new_log = models.VisitorLog(
+        villa_id=villa_id, 
+        visitor_name=visitor_name, 
+        phone_number=phone_number, 
+        vehicle_number=vehicle_number, 
+        purpose=purpose, 
+        gate_name=gate_name,
+        photo_url=photo_url,
+        status=VisitorStatus.PENDING
+    )
     db.add(new_log)
     db.commit()
     return RedirectResponse(url="/dashboard?success=Registered", status_code=303)
+
+@app.post("/resident/create-invite-action")
+def web_create_invite(
+    request: Request,
+    guest_name: str = Form(...),
+    phone_number: str = Form(None),
+    duration_hours: int = Form(12),
+    db: Session = Depends(get_db)
+):
+    username = request.cookies.get("villashield_user")
+    current_res = db.query(models.User).filter(models.User.username == username).first()
+    if not current_res:
+        return RedirectResponse(url="/", status_code=303)
+        
+    from app.routers.invites import generate_unique_otp
+    import datetime
+    
+    otp = generate_unique_otp(db)
+    valid_until = datetime.datetime.utcnow() + datetime.timedelta(hours=duration_hours)
+    
+    invite = models.PreApprovedInvite(
+        villa_id=current_res.id,
+        guest_name=guest_name,
+        phone_number=phone_number,
+        otp_code=otp,
+        valid_until=valid_until,
+        status=InviteStatus.PENDING
+    )
+    db.add(invite)
+    db.commit()
+    return RedirectResponse(url=f"/dashboard?success=Pre-Approved+Pass+Created!+OTP+Code:+{otp}", status_code=303)
+
+@app.post("/guard/verify-otp-action")
+def web_verify_otp(
+    otp_code: str = Form(...),
+    gate_name: str = Form("Main Gate"),
+    db: Session = Depends(get_db)
+):
+    import datetime
+    now = datetime.datetime.utcnow()
+    
+    invite = db.query(models.PreApprovedInvite).filter(
+        models.PreApprovedInvite.otp_code == otp_code.strip(),
+        models.PreApprovedInvite.status == InviteStatus.PENDING,
+        models.PreApprovedInvite.valid_until >= now
+    ).first()
+    
+    if not invite:
+        return RedirectResponse(url="/dashboard?error=Invalid,+Expired,+or+Already+Used+OTP+Pass", status_code=303)
+        
+    invite.status = InviteStatus.USED
+    new_log = models.VisitorLog(
+        villa_id=invite.villa_id,
+        visitor_name=f"{invite.guest_name} (Pre-Approved)",
+        phone_number=invite.phone_number or "Pre-Authorized Pass",
+        purpose="Pre-Approved Guest Entry",
+        gate_name=gate_name,
+        status=VisitorStatus.APPROVED
+    )
+    db.add(new_log)
+    db.commit()
+    return RedirectResponse(url=f"/dashboard?success=Pre-Approved+Pass+Verified!+Entry+Granted+for+{invite.guest_name}", status_code=303)
 
 @app.post("/resident-decision-action")
 def web_resident_decision(log_id: int = Form(...), decision: str = Form(...), db: Session = Depends(get_db)):

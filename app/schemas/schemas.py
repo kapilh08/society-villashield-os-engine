@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from app.models.models import UserRole, VisitorStatus
+from app.models.models import UserRole, VisitorStatus, InviteStatus
 
 class UserCreate(BaseModel):
     username: str
@@ -29,6 +29,8 @@ class VisitorCreate(BaseModel):
     phone_number: str
     vehicle_number: Optional[str] = None
     purpose: str
+    gate_name: Optional[str] = "Main Gate"
+    photo_url: Optional[str] = None
 
 class VisitorOut(BaseModel):
     id: int
@@ -37,6 +39,8 @@ class VisitorOut(BaseModel):
     phone_number: str
     vehicle_number: Optional[str] = None
     purpose: str
+    gate_name: Optional[str] = "Main Gate"
+    photo_url: Optional[str] = None
     status: VisitorStatus
     created_at: datetime
     class Config:
@@ -52,3 +56,24 @@ class StaffCreate(BaseModel):
 
 class StaffClockPayload(BaseModel):
     passcode: str
+
+class InviteCreate(BaseModel):
+    guest_name: str
+    phone_number: Optional[str] = None
+    duration_hours: Optional[int] = 12
+
+class InviteOut(BaseModel):
+    id: int
+    villa_id: int
+    guest_name: str
+    phone_number: Optional[str] = None
+    otp_code: str
+    valid_until: datetime
+    status: InviteStatus
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class OTPVerifyPayload(BaseModel):
+    otp_code: str
+    gate_name: Optional[str] = "Main Gate"

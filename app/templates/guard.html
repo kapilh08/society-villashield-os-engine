@@ -56,7 +56,7 @@
         <a href="/logout-action" class="logout-btn">Log Out</a>
     </div>
 
-    <!-- Check for query response success messages from attendance actions -->
+    <!-- Feedback Alerts -->
     {% if request.query_params.get('success') %}
         <div style="background:#C6F6D5; color:#22543D; padding:12px; border-radius:6px; margin-bottom:20px; font-weight:bold; font-size:14px;">
             📢 {{ request.query_params.get('success') }}
@@ -69,8 +69,26 @@
     {% endif %}
 
     <div class="grid">
-        <!-- Left Side Column: Action Forms Layout -->
+        <!-- Left Column: Action Panels -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
+
+            <!-- NEW: Quick OTP Pre-Approved Pass Entry Panel -->
+            <div class="panel-card" style="border-top: 4px solid #38A169;">
+                <h2>🎫 Pre-Approved Guest Quick Entry (OTP Pass)</h2>
+                <p style="font-size:13px; color:#718096; margin-top:-10px; margin-bottom:15px;">Input guest 4-digit OTP pass code shared by resident for instant entry authorization.</p>
+                <form action="/guard/verify-otp-action" method="POST">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="otp_code" required placeholder="4-Digit OTP" maxlength="6" style="letter-spacing: 4px; font-weight: bold; text-align: center; font-size: 18px; flex: 2;">
+                        <select name="gate_name" style="flex: 1.5; font-size: 14px;">
+                            <option value="Main Gate" selected>Main Gate</option>
+                            <option value="North Gate">North Gate</option>
+                            <option value="Service Gate">Service Gate</option>
+                        </select>
+                    </div>
+                    <button type="submit" style="background: #38A169;">Verify OTP & Grant Entry</button>
+                </form>
+            </div>
+
             <!-- Visitor Registry Panel Card -->
             <div class="panel-card">
                 <h2>📋 Register Arriving Visitor</h2>
@@ -90,7 +108,15 @@
                     <label>Contact Mobile Number</label>
                     <input type="text" name="phone_number" required placeholder="+91...">
                     <label>Vehicle License Plate</label>
-                    <input type="text" name="vehicle_number" placeholder="Optional details">
+                    <input type="text" name="vehicle_number" placeholder="Optional plate details">
+                    
+                    <label>Entry Gate Location</label>
+                    <select name="gate_name">
+                        <option value="Main Gate" selected>Main Gate</option>
+                        <option value="North Gate">North Gate</option>
+                        <option value="Service Gate">Service Gate</option>
+                    </select>
+
                     <label>Purpose of Entry</label>
                     <select name="purpose">
                         <option value="Delivery">Delivery / Courier</option>
@@ -102,7 +128,7 @@
                 </form>
             </div>
 
-            <!-- RESTORED: Staff Attendance Punch Card Panel (FIX FOR QUESTION 2) -->
+            <!-- Staff Attendance Punch Card Panel -->
             <div class="panel-card" style="border-top: 4px solid #2B6CB0;">
                 <h2>⏰ Staff & Guard Attendance Terminal</h2>
                 <p style="font-size:13px; color:#718096; margin-top:-10px; margin-bottom:15px;">Input security PIN badge keys to clock your daily shift metrics check.</p>
@@ -114,7 +140,7 @@
             </div>
         </div>
 
-        <!-- Right Side Column: Live Auto-Polling Status Monitor Container -->
+        <!-- Right Column: Live Auto-Polling Status Monitor Container -->
         <div class="panel-card">
             <h2>🚨 Live Gate Entry Status Tracker</h2>
             <p style="font-size:13px; color:#A0AEC0; margin-top:-10px; margin-bottom:20px;">Silent tracking active. Wiped data inputs fixed.</p>
