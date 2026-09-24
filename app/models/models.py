@@ -20,6 +20,10 @@ class InviteStatus(str, enum.Enum):
     EXPIRED = "EXPIRED"
     CANCELLED = "CANCELLED"
 
+class PassType(str, enum.Enum):
+    SINGLE = "SINGLE"
+    EVENT_GROUP = "EVENT_GROUP"
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -55,6 +59,9 @@ class PreApprovedInvite(Base):
     phone_number = Column(String, nullable=True)
     otp_code = Column(String, unique=True, index=True, nullable=False) # e.g., '8492'
     valid_until = Column(DateTime, nullable=False)
+    pass_type = Column(Enum(PassType), default=PassType.SINGLE, nullable=False)
+    max_uses = Column(Integer, default=1, nullable=False)
+    current_uses = Column(Integer, default=0, nullable=False)
     status = Column(Enum(InviteStatus), default=InviteStatus.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

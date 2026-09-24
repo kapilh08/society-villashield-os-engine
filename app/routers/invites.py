@@ -35,12 +35,18 @@ def create_preapproved_invite(
     otp = generate_unique_otp(db)
     valid_until = datetime.datetime.utcnow() + datetime.timedelta(hours=payload.duration_hours or 12)
     
+    pass_type = payload.pass_type or models.PassType.SINGLE
+    max_uses = payload.max_uses if payload.max_uses and payload.max_uses > 0 else (50 if pass_type == models.PassType.EVENT_GROUP else 1)
+
     invite = models.PreApprovedInvite(
         villa_id=current_user.id,
         guest_name=payload.guest_name,
         phone_number=payload.phone_number,
         otp_code=otp,
         valid_until=valid_until,
+        pass_type=pass_type,
+        max_uses=max_uses,
+        current_uses=0,
         status=models.InviteStatus.PENDING
     )
     db.add(invite)
@@ -64,15 +70,24 @@ async def verify_otp_pass(
     if not invite:
         raise HTTPException(status_code=400, detail="Invalid, expired, or already used OTP pass code")
     
-    # 1. Mark Invite as USED
-    invite.status = models.InviteStatus.USED
+    # 1. Increment usage count
+    invite.current_uses += 1
     
-    # 2. Log an APPROVED entry in VisitorLog automatically
+    # 2. Mark as USED if SINGLE pass or max_uses reached
+    if invite.pass_type == models.PassType.SINGLE or invite.current_uses >= invite.max_uses:
+        invite.status = models.InviteStatus.USED
+    
+    # 3. Log an APPROVED entry in VisitorLog automatically
+    if invite.pass_type == models.PassType.EVENT_GROUP:
+        v_name = f"{invite.guest_name} (Event Guest #{invite.current_uses} of {invite.max_uses})"
+    else:
+        v_name = f"{invite.guest_name} (Pre-Approved)"
+
     new_log = models.VisitorLog(
         villa_id=invite.villa_id,
-        visitor_name=f"{invite.guest_name} (Pre-Approved)",
-        phone_number=invite.phone_number or "Pre-Authorized Pass",
-        purpose="Pre-Approved Guest Entry",
+        visitor_name=v_name,
+        phone_number=invite.phone_number or "Pre-Authorized Group Pass",
+        purpose="Pre-Approved Event/Guest Entry",
         gate_name=payload.gate_name or "Main Gate",
         status=models.VisitorStatus.APPROVED
     )
@@ -80,7 +95,7 @@ async def verify_otp_pass(
     db.commit()
     db.refresh(new_log)
 
-    # 3. Broadcast status update to active guard monitors
+    # 4. Broadcast status update to active guard monitors
     await manager.broadcast_action_to_guards({
         "event": "VISITOR_STATUS_UPDATED",
         "log_id": new_log.id,

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from app.models.models import UserRole, VisitorStatus, InviteStatus
+from app.models.models import UserRole, VisitorStatus, InviteStatus, PassType
 
 class UserCreate(BaseModel):
     username: str
@@ -61,6 +61,8 @@ class InviteCreate(BaseModel):
     guest_name: str
     phone_number: Optional[str] = None
     duration_hours: Optional[int] = 12
+    pass_type: Optional[PassType] = PassType.SINGLE
+    max_uses: Optional[int] = 1
 
 class InviteOut(BaseModel):
     id: int
@@ -69,6 +71,9 @@ class InviteOut(BaseModel):
     phone_number: Optional[str] = None
     otp_code: str
     valid_until: datetime
+    pass_type: PassType
+    max_uses: int
+    current_uses: int
     status: InviteStatus
     created_at: datetime
     class Config:

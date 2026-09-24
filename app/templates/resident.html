@@ -124,6 +124,36 @@
             background: #F8FAFC;
         }
 
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+
+        .radio-card {
+            flex: 1;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4A5568;
+            transition: all 0.2s;
+        }
+
+        .radio-card input {
+            display: none;
+        }
+
+        .radio-card.active {
+            border-color: #38A169;
+            background: #F0FFF4;
+            color: #22543D;
+        }
+
         .submit-btn {
             width: 100%;
             background: #38A169;
@@ -193,7 +223,7 @@
             border-radius: 6px;
             font-size: 18px;
             font-weight: 800;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             display: inline-block;
         }
 
@@ -207,6 +237,26 @@
             font-size: 12px;
             display: inline-block;
             margin-top: 8px;
+        }
+
+        .tag-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .tag-single {
+            background: #E2E8F0;
+            color: #4A5568;
+        }
+
+        .tag-group {
+            background: #FEFCBF;
+            color: #744210;
         }
 
         @media (min-width: 480px) {
@@ -248,16 +298,33 @@
         </div>
         {% endif %}
 
-        <!-- Pre-Approved Guest Invite Form -->
+        <!-- Pre-Approved Guest & Group Event Pass Form -->
         <div class="card" style="border-top: 4px solid #38A169;">
-            <h2 style="margin-top: 0; color: #276749;">🎫 Pre-Approve Upcoming Guest (Instant Gate OTP)</h2>
-            <p style="font-size: 13px; color: #718096; margin-top: -8px; margin-bottom: 15px;">Generate a 4-digit gate
-                OTP pass code so your guests enter without waiting for live approval.</p>
+            <h2 style="margin-top: 0; color: #276749;">🎫 Pre-Approve Guest or WhatsApp Group Event Pass</h2>
+            <p style="font-size: 13px; color: #718096; margin-top: -8px; margin-bottom: 15px;">Generate an OTP pass code
+                for individual guests or a shared WhatsApp group pass for parties/weddings.</p>
             <form action="/resident/create-invite-action" method="POST" id="inviteForm">
-                <label>Guest Full Name</label>
-                <input type="text" name="guest_name" required placeholder="e.g. Rahul Sharma" autocomplete="off">
 
-                <label>Guest Mobile Number (Optional)</label>
+                <label>Pass Type</label>
+                <div class="radio-group">
+                    <label class="radio-card active" id="singleCard" onclick="togglePassType('SINGLE')">
+                        <input type="radio" name="pass_type" value="SINGLE" checked> 👤 Single Guest Pass
+                    </label>
+                    <label class="radio-card" id="groupCard" onclick="togglePassType('EVENT_GROUP')">
+                        <input type="radio" name="pass_type" value="EVENT_GROUP"> 🎟️ Group / Party Pass
+                    </label>
+                </div>
+
+                <label id="nameLabel">Guest / Event Name</label>
+                <input type="text" name="guest_name" required placeholder="e.g. Rahul Sharma or Birthday Party"
+                    autocomplete="off">
+
+                <div id="maxUsesGroup" style="display: none;">
+                    <label>Maximum Allowed Guests (Group Pass Limit)</label>
+                    <input type="number" name="max_uses" value="50" min="2" max="500" placeholder="e.g. 50 guests">
+                </div>
+
+                <label>Guest Mobile Number (Optional for Group Pass)</label>
                 <input type="text" name="phone_number" placeholder="e.g. +91 9876543210" autocomplete="off">
 
                 <label>Pass Validity Duration</label>
@@ -265,27 +332,49 @@
                     <option value="6">Valid for 6 Hours</option>
                     <option value="12" selected>Valid for 12 Hours</option>
                     <option value="24">Valid for 24 Hours</option>
+                    <option value="48">Valid for 48 Hours (Multi-Day Event)</option>
                 </select>
 
-                <button type="submit" class="submit-btn">Generate Pass & OTP Code</button>
+                <button type="submit" class="submit-btn">Generate Gate Pass & OTP Code</button>
             </form>
         </div>
 
         <!-- Active Pre-Approved Passes List -->
         {% if active_invites %}
-        <h2>📜 Active Pre-Approved Guest Passes</h2>
+        <h2>📜 Active Pre-Approved Passes & Group Events</h2>
         {% for invite in active_invites %}
         <div class="card"
             style="border-left: 5px solid {% if 'USED' in invite.status|string %}#A0AEC0{% else %}#38A169{% endif %}; display: flex; justify-content: space-between; align-items: center;">
             <div>
+                {% if 'EVENT_GROUP' in invite.pass_type|string %}
+                <span class="tag-badge tag-group">🎟️ WhatsApp Group Event Pass</span><br>
+                {% else %}
+                <span class="tag-badge tag-single">👤 Single Guest Pass</span><br>
+                {% endif %}
+
                 <strong style="font-size: 16px; color: #1A365D;">{{ invite.guest_name }}</strong><br>
+
+                {% if 'EVENT_GROUP' in invite.pass_type|string %}
+                <span style="font-size: 12px; color: #2B6CB0; font-weight: bold;">
+                    📊 Gate Tracker: {{ invite.current_uses }} / {{ invite.max_uses }} Guests Entered
+                </span><br>
+                {% endif %}
+
                 <span style="font-size: 12px; color: #718096;">Status: <strong>{{ invite.status|string |
                         replace('InviteStatus.', '') }}</strong></span><br>
+
                 {% if 'PENDING' in invite.status|string %}
+                {% if 'EVENT_GROUP' in invite.pass_type|string %}
+                <a href="https://wa.me/?text=🎉%20*Gate%20Pass%20-%20{{ invite.guest_name }}*%0A📍%20Location:%20Villa%20Resident%20Entry%0A🔑%20Pass%20Code:%20*{{ invite.otp_code }}*%0A⏰%20Show%20this%20code%20at%20the%20VillaShield%20Gate%20for%20instant%20entry!"
+                    target="_blank" class="wa-btn">
+                    💬 Share to WhatsApp Group
+                </a>
+                {% else %}
                 <a href="https://wa.me/?text=Hi%20{{ invite.guest_name }},%20your%20gate%20pass%20code%20is%20*{{ invite.otp_code }}*%20for%20fast%20entry."
                     target="_blank" class="wa-btn">
                     💬 Share Code via WhatsApp
                 </a>
+                {% endif %}
                 {% endif %}
             </div>
             <div style="text-align: right;">
@@ -326,8 +415,26 @@
         {% endif %}
     </div>
 
-    <!-- Smart Auto-Refresh Script: Pauses refresh while resident is actively focusing or typing in form inputs -->
     <script>
+        function togglePassType(type) {
+            const singleCard = document.getElementById('singleCard');
+            const groupCard = document.getElementById('groupCard');
+            const maxUsesGroup = document.getElementById('maxUsesGroup');
+            const nameLabel = document.getElementById('nameLabel');
+
+            if (type === 'EVENT_GROUP') {
+                singleCard.classList.remove('active');
+                groupCard.classList.add('active');
+                maxUsesGroup.style.display = 'block';
+                nameLabel.innerText = 'Event / Party Name (e.g. Amit Birthday)';
+            } else {
+                groupCard.classList.remove('active');
+                singleCard.classList.add('active');
+                maxUsesGroup.style.display = 'none';
+                nameLabel.innerText = 'Guest Full Name';
+            }
+        }
+
         let isUserInteracting = false;
 
         document.addEventListener('focusin', function (e) {
@@ -349,7 +456,6 @@
             }, 1000);
         });
 
-        // Smart Refresh (30 Seconds interval, ONLY when NOT typing or focused on input)
         setInterval(function () {
             let activeEl = document.activeElement;
             let isFocusedOnInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT' || activeEl.tagName === 'TEXTAREA');

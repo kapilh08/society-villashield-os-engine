@@ -22,6 +22,9 @@ def auto_migrate_db():
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE visitor_logs ADD COLUMN IF NOT EXISTS gate_name VARCHAR DEFAULT 'Main Gate';"))
             conn.execute(text("ALTER TABLE visitor_logs ADD COLUMN IF NOT EXISTS photo_url VARCHAR;"))
+            conn.execute(text("ALTER TABLE pre_approved_invites ADD COLUMN IF NOT EXISTS pass_type VARCHAR DEFAULT 'SINGLE';"))
+            conn.execute(text("ALTER TABLE pre_approved_invites ADD COLUMN IF NOT EXISTS max_uses INTEGER DEFAULT 1;"))
+            conn.execute(text("ALTER TABLE pre_approved_invites ADD COLUMN IF NOT EXISTS current_uses INTEGER DEFAULT 0;"))
             conn.commit()
     except Exception as e:
         print(f"Migration note: {e}")
@@ -336,6 +339,8 @@ def web_create_invite(
     guest_name: str = Form(...),
     phone_number: str = Form(None),
     duration_hours: int = Form(12),
+    pass_type: str = Form("SINGLE"),
+    max_uses: int = Form(1),
     db: Session = Depends(get_db)
 ):
     username = request.cookies.get("villashield_user")
@@ -349,17 +354,24 @@ def web_create_invite(
     otp = generate_unique_otp(db)
     valid_until = datetime.datetime.utcnow() + datetime.timedelta(hours=duration_hours)
     
+    p_enum = models.PassType.EVENT_GROUP if pass_type == "EVENT_GROUP" else models.PassType.SINGLE
+    m_uses = max_uses if max_uses and max_uses > 0 else (50 if p_enum == models.PassType.EVENT_GROUP else 1)
+
     invite = models.PreApprovedInvite(
         villa_id=current_res.id,
         guest_name=guest_name,
         phone_number=phone_number,
         otp_code=otp,
         valid_until=valid_until,
+        pass_type=p_enum,
+        max_uses=m_uses,
+        current_uses=0,
         status=InviteStatus.PENDING
     )
     db.add(invite)
     db.commit()
-    return RedirectResponse(url=f"/dashboard?success=Pre-Approved+Pass+Created!+OTP+Code:+{otp}", status_code=303)
+    msg = f"Event+Pass+Created!+OTP:+{otp}+Max+Guests:+{m_uses}" if p_enum == models.PassType.EVENT_GROUP else f"Single+Guest+Pass+Created!+OTP:+{otp}"
+    return RedirectResponse(url=f"/dashboard?success={msg}", status_code=303)
 
 @app.post("/guard/verify-otp-action")
 def web_verify_otp(
@@ -379,18 +391,28 @@ def web_verify_otp(
     if not invite:
         return RedirectResponse(url="/dashboard?error=Invalid,+Expired,+or+Already+Used+OTP+Pass", status_code=303)
         
-    invite.status = InviteStatus.USED
+    invite.current_uses += 1
+    if invite.pass_type == models.PassType.SINGLE or invite.current_uses >= invite.max_uses:
+        invite.status = InviteStatus.USED
+
+    if invite.pass_type == models.PassType.EVENT_GROUP:
+        v_name = f"{invite.guest_name} (Event Guest #{invite.current_uses} of {invite.max_uses})"
+        msg = f"EVENT+PASS+VERIFIED!+Guest+%23{invite.current_uses}+{invite.guest_name}+Entered"
+    else:
+        v_name = f"{invite.guest_name} (Pre-Approved)"
+        msg = f"Pre-Approved+Pass+Verified!+Entry+Granted+for+{invite.guest_name}"
+
     new_log = models.VisitorLog(
         villa_id=invite.villa_id,
-        visitor_name=f"{invite.guest_name} (Pre-Approved)",
-        phone_number=invite.phone_number or "Pre-Authorized Pass",
-        purpose="Pre-Approved Guest Entry",
+        visitor_name=v_name,
+        phone_number=invite.phone_number or "Pre-Authorized Group Pass",
+        purpose="Pre-Approved Event/Guest Entry",
         gate_name=gate_name,
         status=VisitorStatus.APPROVED
     )
     db.add(new_log)
     db.commit()
-    return RedirectResponse(url=f"/dashboard?success=Pre-Approved+Pass+Verified!+Entry+Granted+for+{invite.guest_name}", status_code=303)
+    return RedirectResponse(url=f"/dashboard?success={msg}", status_code=303)
 
 @app.post("/resident-decision-action")
 def web_resident_decision(log_id: int = Form(...), decision: str = Form(...), db: Session = Depends(get_db)):
