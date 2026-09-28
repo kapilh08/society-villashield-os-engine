@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Society Events & Competition Management - VillaShield OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🏆</span>
+                <span class="font-bold text-xl tracking-tight text-amber-400">VillaShield Events</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/leaderboard"
+                    class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition flex items-center gap-1.5">
+                    <span>🥇 Live Leaderboard</span>
+                </a>
+                <a href="/dashboard" class="text-slate-400 hover:text-slate-200 text-sm font-medium">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <!-- Header & Quick Actions -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-100">Society Events & Competitions</h1>
+                <p class="text-slate-400 text-sm mt-1">Manage events, organize competition rosters, assign team
+                    coordinators, and declare winners.</p>
+            </div>
+            {% if role == 'ADMIN' %}
+            <button onclick="document.getElementById('createEventModal').classList.remove('hidden')"
+                class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-semibold px-5 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2">
+                <span>➕ Create New Event</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Event Cards Container -->
+        <div class="space-y-8">
+            {% for evt in events %}
+            <div class="glass rounded-2xl p-6 border border-slate-800 space-y-6">
+                <!-- Event Header -->
+                <div
+                    class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-bold text-slate-100">{{ evt.title }}</h2>
+                            <span
+                                class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                {{ evt.status }}
+                            </span>
+                        </div>
+                        <p class="text-slate-400 text-sm mt-1">{{ evt.description or 'Annual Society Festival Event' }}
+                        </p>
+                        <div class="flex items-center gap-4 text-xs text-slate-400 mt-2">
+                            <span>📅 {{ evt.event_date }}</span>
+                            <span>📍 {{ evt.venue }}</span>
+                        </div>
+                    </div>
+
+                    {% if role == 'ADMIN' %}
+                    <button onclick="openAddCompModal('{{ evt.id }}', '{{ evt.title }}')"
+                        class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 text-xs font-medium px-4 py-2 rounded-lg transition">
+                        ➕ Add Competition
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Competitions Grid -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span>🎯 Competitions & Categories</span>
+                        <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{{
+                            evt.competitions|length }} active</span>
+                    </h3>
+
+                    {% if evt.competitions %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for comp in evt.competitions %}
+                        <div class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 rounded-xl p-4 transition space-y-3 cursor-pointer"
+                            onclick="toggleParticipants('comp-{{ comp.id }}')">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h4 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                                        <span>{{ comp.title }}</span>
+                                    </h4>
+                                    <span
+                                        class="text-xs font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-300 inline-block mt-1">
+                                        Category: {{ comp.category }}
+                                    </span>
+                                </div>
+                                <span
+                                    class="bg-amber-500/10 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-500/20">
+                                    👥 {{ comp.participant_count }} Signed Up
+                                </span>
+                            </div>
+
+                            {% if comp.coordinator_name != 'N/A' %}
+                            <div
+                                class="text-xs text-slate-400 border-t border-slate-800/80 pt-2 flex items-center justify-between">
+                                <span>Coordinator: {{ comp.coordinator_name }}</span>
+                                {% if comp.coordinator_phone %}
+                                <a href="https://wa.me/{{ comp.coordinator_phone }}?text=Hi%20{{ comp.coordinator_name }}!%20Here%20is%20the%20coordinator%20link%20for%20{{ comp.title }}"
+                                    target="_blank" onclick="event.stopPropagation()"
+                                    class="text-emerald-400 hover:underline">💬 WhatsApp</a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <div
+                                class="text-xs text-amber-400 font-medium flex items-center justify-between pt-2 border-t border-slate-800/80">
+                                <span>Click to view participants & winners ➔</span>
+                                <button type="button"
+                                    onclick="event.stopPropagation(); openRegisterModal('{{ comp.id }}', '{{ comp.title }}')"
+                                    class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1 rounded text-xs transition">
+                                    📝 Register Participant
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Expandable Participant Drawer -->
+                        <div id="comp-{{ comp.id }}"
+                            class="hidden col-span-full bg-slate-900 border border-amber-500/30 rounded-xl p-5 space-y-4">
+                            <div
+                                class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                                <div>
+                                    <h4 class="text-lg font-bold text-amber-400">📋 Participants for {{ comp.title }}
+                                    </h4>
+                                    <p class="text-xs text-slate-400">Filter by category/position and select 1st, 2nd,
+                                        and 3rd place winners.</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div
+                                        class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+                                        <span class="text-slate-400 px-1 font-semibold">Category:</span>
+                                        <button type="button" onclick="filterCategory('comp-{{ comp.id }}', 'ALL')"
+                                            class="hover:bg-slate-800 text-slate-200 px-2 py-0.5 rounded">ALL</button>
+                                        <button type="button" onclick="filterCategory('comp-{{ comp.id }}', 'KIDS')"
+                                            class="hover:bg-slate-800 text-amber-300 px-2 py-0.5 rounded">KIDS</button>
+                                        <button type="button" onclick="filterCategory('comp-{{ comp.id }}', 'MALE')"
+                                            class="hover:bg-slate-800 text-blue-300 px-2 py-0.5 rounded">MALE</button>
+                                        <button type="button" onclick="filterCategory('comp-{{ comp.id }}', 'FEMALE')"
+                                            class="hover:bg-slate-800 text-pink-300 px-2 py-0.5 rounded">FEMALE</button>
+                                    </div>
+                                    <div
+                                        class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-amber-500/30 text-xs">
+                                        <span class="text-amber-400 px-1 font-semibold">Position:</span>
+                                        <button type="button" onclick="filterPosition('comp-{{ comp.id }}', 'ALL')"
+                                            class="hover:bg-slate-800 text-slate-200 px-2 py-0.5 rounded">ALL</button>
+                                        <button type="button" onclick="filterPosition('comp-{{ comp.id }}', 'WINNERS')"
+                                            class="hover:bg-slate-800 text-amber-300 font-bold px-2 py-0.5 rounded">🏆
+                                            WINNERS</button>
+                                        <button type="button" onclick="filterPosition('comp-{{ comp.id }}', 'WINNER')"
+                                            class="hover:bg-slate-800 text-amber-400 px-2 py-0.5 rounded">🥇
+                                            1st</button>
+                                        <button type="button"
+                                            onclick="filterPosition('comp-{{ comp.id }}', 'RUNNER_UP_1')"
+                                            class="hover:bg-slate-800 text-slate-300 px-2 py-0.5 rounded">🥈
+                                            2nd</button>
+                                        <button type="button"
+                                            onclick="filterPosition('comp-{{ comp.id }}', 'RUNNER_UP_2')"
+                                            class="hover:bg-slate-800 text-amber-600 px-2 py-0.5 rounded">🥉
+                                            3rd</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if comp.participants %}
+                            <form action="/events/declare-winners-action" method="POST" class="space-y-4">
+                                <input type="hidden" name="competition_id" value="{{ comp.id }}">
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm text-slate-300">
+                                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase">
+                                            <tr>
+                                                <th class="p-3">Participant Name</th>
+                                                <th class="p-3">Villa No</th>
+                                                <th class="p-3">Category</th>
+                                                <th class="p-3">Phone</th>
+                                                <th class="p-3">Current Status</th>
+                                                <th class="p-3 text-center">🥇 1st Place</th>
+                                                <th class="p-3 text-center">🥈 2nd Place</th>
+                                                <th class="p-3 text-center">🥉 3rd Place</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800">
+                                            {% for p in comp.participants %}
+                                            <tr class="participant-row hover:bg-slate-850"
+                                                data-category="{{ p.category }}" data-rank="{{ p.rank }}">
+                                                <td class="p-3 font-semibold text-slate-100">{{ p.name }}</td>
+                                                <td class="p-3 text-amber-400 font-medium">Villa {{ p.villa }}</td>
+                                                <td class="p-3 text-xs bg-slate-800/60 rounded">{{ p.category }}</td>
+                                                <td class="p-3 text-slate-400">{{ p.phone }}</td>
+                                                <td class="p-3">
+                                                    {% if p.rank == 'WINNER' %}
+                                                    <span
+                                                        class="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">🥇
+                                                        WINNER (10 pts)</span>
+                                                    {% elif p.rank == 'RUNNER_UP_1' %}
+                                                    <span
+                                                        class="px-2 py-0.5 rounded text-xs font-bold bg-slate-300/20 text-slate-200 border border-slate-300/40">🥈
+                                                        1st RUNNER-UP (7 pts)</span>
+                                                    {% elif p.rank == 'RUNNER_UP_2' %}
+                                                    <span
+                                                        class="px-2 py-0.5 rounded text-xs font-bold bg-amber-700/20 text-amber-500 border border-amber-700/40">🥉
+                                                        2nd RUNNER-UP (5 pts)</span>
+                                                    {% else %}
+                                                    <span class="text-xs text-slate-500">Participant</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="p-3 text-center">
+                                                    <input type="radio" name="winner_id" value="{{ p.id }}" {% if
+                                                        p.rank=='WINNER' %}checked{% endif %}
+                                                        onclick="handleWinnerRadioClick(this, 'winner_id')"
+                                                        class="accent-amber-500 w-4 h-4 cursor-pointer">
+                                                </td>
+                                                <td class="p-3 text-center">
+                                                    <input type="radio" name="runner_up_1_id" value="{{ p.id }}" {% if
+                                                        p.rank=='RUNNER_UP_1' %}checked{% endif %}
+                                                        onclick="handleWinnerRadioClick(this, 'runner_up_1_id')"
+                                                        class="accent-slate-400 w-4 h-4 cursor-pointer">
+                                                </td>
+                                                <td class="p-3 text-center">
+                                                    <input type="radio" name="runner_up_2_id" value="{{ p.id }}" {% if
+                                                        p.rank=='RUNNER_UP_2' %}checked{% endif %}
+                                                        onclick="handleWinnerRadioClick(this, 'runner_up_2_id')"
+                                                        class="accent-amber-700 w-4 h-4 cursor-pointer">
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {% if role == 'ADMIN' %}
+                                <div class="flex justify-end pt-2">
+                                    <button type="submit"
+                                        class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-5 py-2 rounded-lg text-sm shadow transition">
+                                        🏆 Save & Update Leaderboard
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </form>
+                            {% else %}
+                            <p class="text-sm text-slate-400 py-4 text-center">No participants registered yet for this
+                                competition.</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-slate-400 text-sm italic">No competitions added yet for this event.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="glass rounded-2xl p-12 text-center space-y-4">
+                <span class="text-5xl">🎪</span>
+                <h3 class="text-xl font-bold text-slate-200">No Society Events Active Yet</h3>
+                <p class="text-slate-400 text-sm max-w-md mx-auto">Create society events (Diwali Fest, Sports Day) and
+                    add competitions for residents to register natively.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Modal: Create New Event -->
+    <div id="createEventModal"
+        class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass rounded-2xl max-w-md w-full p-6 space-y-5 border border-slate-800">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-amber-400">➕ Create Society Event</h3>
+                <button onclick="document.getElementById('createEventModal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+            <form action="/events/create-action" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Event Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Diwali Mela 2026"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-400 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Description</label>
+                    <textarea name="description" rows="2"
+                        placeholder="Annual grand celebration with sports, drawing, and games..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-400 outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Date & Time</label>
+                        <input type="datetime-local" name="event_date" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Venue</label>
+                        <input type="text" name="venue" value="Community Hall"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">Create
+                    Event</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Competition -->
+    <div id="addCompModal"
+        class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass rounded-2xl max-w-md w-full p-6 space-y-5 border border-slate-800">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-amber-400">➕ Add Competition</h3>
+                <button onclick="document.getElementById('addCompModal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+            <form action="/events/add-competition-action" method="POST" class="space-y-4">
+                <input type="hidden" id="modal_event_id" name="event_id">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Competition Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Badminton Singles (Adults)"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-400 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Category</label>
+                    <select name="category"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-400 outline-none">
+                        <option value="KIDS">KIDS (Under 12)</option>
+                        <option value="YOUTH">YOUTH (13-18)</option>
+                        <option value="MALE">ADULT MALE</option>
+                        <option value="FEMALE">ADULT FEMALE</option>
+                        <option value="SENIOR">SENIOR CITIZENS</option>
+                        <option value="OPEN" selected>OPEN FOR ALL</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Coordinator Name</label>
+                        <input type="text" name="coordinator_name" placeholder="e.g. Rajesh Kumar"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Coordinator Phone</label>
+                        <input type="text" name="coordinator_phone" placeholder="e.g. +91 9876543210"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">Add
+                    Competition</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Register Participant -->
+    <div id="registerParticipantModal"
+        class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass rounded-2xl max-w-md w-full p-6 space-y-5 border border-slate-800">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-400">📝 Competition Registration</h3>
+                    <p id="reg_modal_comp_title" class="text-xs text-slate-400 mt-0.5"></p>
+                </div>
+                <button onclick="document.getElementById('registerParticipantModal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+            <form action="/events/register-participant-action" method="POST" class="space-y-4">
+                <input type="hidden" id="modal_participant_comp_id" name="competition_id">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Participant Full Name</label>
+                    <input type="text" name="participant_name" required placeholder="e.g. Aarav Sharma"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-400 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Villa Number</label>
+                        <input type="text" name="villa_number" required placeholder="e.g. 101"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Category</label>
+                        <select name="category"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                            <option value="KIDS">KIDS (Under 12)</option>
+                            <option value="YOUTH">YOUTH (13-18)</option>
+                            <option value="MALE">ADULT MALE</option>
+                            <option value="FEMALE">ADULT FEMALE</option>
+                            <option value="SENIOR">SENIOR CITIZENS</option>
+                            <option value="OPEN" selected>OPEN FOR ALL</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Mobile Phone (Optional)</label>
+                    <input type="text" name="phone_number" placeholder="e.g. +91 9876543210"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-400 outline-none">
+                </div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">
+                    📝 Submit Registration
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleParticipants(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.toggle('hidden');
+            }
+        }
+        function openAddCompModal(eventId, eventTitle) {
+            document.getElementById('modal_event_id').value = eventId;
+            document.getElementById('addCompModal').classList.remove('hidden');
+        }
+        function openRegisterModal(compId, compTitle) {
+            document.getElementById('modal_participant_comp_id').value = compId;
+            document.getElementById('reg_modal_comp_title').textContent = compTitle;
+            document.getElementById('registerParticipantModal').classList.remove('hidden');
+        }
+        function filterCategory(compId, cat) {
+            const container = document.getElementById(compId);
+            if (!container) return;
+            const rows = container.querySelectorAll('.participant-row');
+            rows.forEach(r => {
+                const rCat = r.getAttribute('data-category') || '';
+                if (cat === 'ALL' || rCat.toUpperCase().includes(cat)) {
+                    r.style.display = '';
+                } else {
+                    r.style.display = 'none';
+                }
+            });
+        }
+        function filterPosition(compId, pos) {
+            const container = document.getElementById(compId);
+            if (!container) return;
+            const rows = container.querySelectorAll('.participant-row');
+            rows.forEach(r => {
+                const rRank = (r.getAttribute('data-rank') || 'NONE').toUpperCase();
+                if (pos === 'ALL') {
+                    r.style.display = '';
+                } else if (pos === 'WINNERS' && (rRank === 'WINNER' || rRank === 'RUNNER_UP_1' || rRank === 'RUNNER_UP_2')) {
+                    r.style.display = '';
+                } else if (pos === rRank) {
+                    r.style.display = '';
+                } else if (pos === 'PARTICIPANTS' && (rRank === 'NONE' || rRank === '')) {
+                    r.style.display = '';
+                } else {
+                    r.style.display = 'none';
+                }
+            });
+        }
+        function handleWinnerRadioClick(radio, posName) {
+            // Check if radio was already checked prior to this click
+            if (radio.dataset.wasChecked === 'true') {
+                radio.checked = false;
+                radio.dataset.wasChecked = 'false';
+                return;
+            }
+
+            // Uncheck other radio options in the SAME participant row
+            const tr = radio.closest('tr');
+            if (tr) {
+                const rowRadios = tr.querySelectorAll('input[type="radio"]');
+                rowRadios.forEach(r => {
+                    if (r !== radio) {
+                        r.checked = false;
+                        r.dataset.wasChecked = 'false';
+                    }
+                });
+            }
+
+            // Reset wasChecked marker for all radios in the table belonging to posName
+            document.querySelectorAll(`input[name="${posName}"]`).forEach(r => {
+                r.dataset.wasChecked = 'false';
+            });
+
+            // Mark this radio as checked
+            radio.dataset.wasChecked = 'true';
+        }
+    </script>
+</body>
+
+</html>

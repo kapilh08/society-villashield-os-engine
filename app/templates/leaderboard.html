@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Society Event Live Leaderboard - VillaShield OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gold-glow {
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .silver-glow {
+            box-shadow: 0 0 20px rgba(226, 232, 240, 0.2);
+        }
+
+        .bronze-glow {
+            box-shadow: 0 0 20px rgba(217, 119, 6, 0.2);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Top Navigation -->
+    <nav class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🥇</span>
+                <span class="font-bold text-xl tracking-tight text-amber-400">Society Live Leaderboard</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/events" class="text-slate-400 hover:text-slate-200 text-sm font-medium">🎯 Events &
+                    Competitions</a>
+                <a href="/dashboard" class="text-slate-400 hover:text-slate-200 text-sm font-medium">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+        <!-- Hero Header -->
+        <div class="text-center space-y-3">
+            <span
+                class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-widest">
+                🏆 Official Society Championship Tally
+            </span>
+            <h1
+                class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">
+                Society Competition Leaderboard
+            </h1>
+            <p class="text-slate-400 text-sm max-w-xl mx-auto">
+                Real-time villa points tally calculated from competition winners. 10 pts for Winner (🥇), 7 pts for 1st
+                Runner-Up (🥈), 5 pts for 2nd Runner-Up (🥉).
+            </p>
+
+            <!-- Event & Competition Filter Bar -->
+            <form method="GET" action="/leaderboard" class="flex flex-wrap items-center justify-center gap-3 pt-4">
+                <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5">
+                    <span class="text-xs text-slate-400 font-semibold">📅 Event:</span>
+                    <select name="event_id" onchange="this.form.submit()"
+                        class="bg-slate-950 text-amber-300 text-xs font-bold rounded px-2 py-1 border border-slate-700 outline-none">
+                        <option value="">ALL EVENTS</option>
+                        {% for e in events %}
+                        <option value="{{ e.id }}" {% if selected_event_id==e.id %}selected{% endif %}>{{ e.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 bg-slate-900 border border-amber-500/30 rounded-xl px-3 py-1.5">
+                    <span class="text-xs text-amber-400 font-semibold">🎯 Competition:</span>
+                    <select name="competition_id" onchange="this.form.submit()"
+                        class="bg-slate-950 text-slate-200 text-xs font-bold rounded px-2 py-1 border border-slate-700 outline-none">
+                        <option value="">ALL COMPETITIONS</option>
+                        {% for c in competitions %}
+                        <option value="{{ c.id }}" {% if selected_comp_id==c.id %}selected{% endif %}>{{ c.title }} ({{
+                            c.category }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if selected_event_id or selected_comp_id %}
+                <a href="/leaderboard"
+                    class="text-xs text-slate-400 hover:text-slate-200 underline font-semibold px-2">Clear Filters ✕</a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% if leaderboard %}
+        <!-- Podium Top 3 Standings -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto items-end pt-6">
+            <!-- 2nd Place (Silver) -->
+            {% if leaderboard|length >= 2 %}
+            <div
+                class="glass rounded-2xl p-6 text-center border border-slate-700/80 silver-glow md:order-1 order-2 space-y-3 bg-slate-900/80">
+                <div
+                    class="w-16 h-16 mx-auto rounded-full bg-slate-200/20 flex items-center justify-center text-3xl font-bold text-slate-200 border border-slate-300/40">
+                    🥈
+                </div>
+                <div>
+                    <h3 class="text-2xl font-extrabold text-slate-100">Villa {{ leaderboard[1].villa }}</h3>
+                    <p class="text-xs text-slate-400">2nd Position Overall</p>
+                </div>
+                <div class="text-3xl font-black text-slate-200">{{ leaderboard[1].points }} <span
+                        class="text-xs font-normal text-slate-400">PTS</span></div>
+                <div class="text-xs text-slate-400 flex justify-center gap-2 pt-2 border-t border-slate-800">
+                    <span>🥇 {{ leaderboard[1].gold }}</span>
+                    <span>🥈 {{ leaderboard[1].silver }}</span>
+                    <span>🥉 {{ leaderboard[1].bronze }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 1st Place (Gold) -->
+            {% if leaderboard|length >= 1 %}
+            <div
+                class="glass rounded-2xl p-8 text-center border-2 border-amber-500/60 gold-glow md:order-2 order-1 space-y-4 bg-gradient-to-b from-amber-950/40 to-slate-900 transform md:-translate-y-4">
+                <div
+                    class="w-20 h-20 mx-auto rounded-full bg-amber-500/30 flex items-center justify-center text-4xl font-extrabold text-amber-300 border-2 border-amber-400/60">
+                    🥇
+                </div>
+                <div>
+                    <span
+                        class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-slate-950 uppercase">Overall
+                        Champion</span>
+                    <h3 class="text-3xl font-black text-amber-300 mt-1">Villa {{ leaderboard[0].villa }}</h3>
+                </div>
+                <div class="text-4xl font-black text-amber-400">{{ leaderboard[0].points }} <span
+                        class="text-sm font-medium text-amber-300/70">PTS</span></div>
+                <div
+                    class="text-xs text-amber-300/80 flex justify-center gap-3 pt-2 border-t border-amber-500/20 font-semibold">
+                    <span>🥇 {{ leaderboard[0].gold }} Gold</span>
+                    <span>🥈 {{ leaderboard[0].silver }} Silver</span>
+                    <span>🥉 {{ leaderboard[0].bronze }} Bronze</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 3rd Place (Bronze) -->
+            {% if leaderboard|length >= 3 %}
+            <div
+                class="glass rounded-2xl p-6 text-center border border-amber-700/60 bronze-glow md:order-3 order-3 space-y-3 bg-slate-900/80">
+                <div
+                    class="w-16 h-16 mx-auto rounded-full bg-amber-800/30 flex items-center justify-center text-3xl font-bold text-amber-500 border border-amber-700/40">
+                    🥉
+                </div>
+                <div>
+                    <h3 class="text-2xl font-extrabold text-slate-100">Villa {{ leaderboard[2].villa }}</h3>
+                    <p class="text-xs text-slate-400">3rd Position Overall</p>
+                </div>
+                <div class="text-3xl font-black text-amber-500">{{ leaderboard[2].points }} <span
+                        class="text-xs font-normal text-slate-400">PTS</span></div>
+                <div class="text-xs text-slate-400 flex justify-center gap-2 pt-2 border-t border-slate-800">
+                    <span>🥇 {{ leaderboard[2].gold }}</span>
+                    <span>🥈 {{ leaderboard[2].silver }}</span>
+                    <span>🥉 {{ leaderboard[2].bronze }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Complete Standings Table -->
+        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4 max-w-5xl mx-auto">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-xl font-bold text-slate-100">📊 Full Society Villa Standings</h3>
+                    <input type="text" id="villaSearchInput" onkeyup="searchVillaTable()"
+                        placeholder="🔍 Search Villa No..."
+                        class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-xs text-slate-100 outline-none focus:border-amber-400">
+                </div>
+                {% if role == 'ADMIN' %}
+                <a href="https://wa.me/?text=🏆%20*VillaShield%20Society%20Event%20Leaderboard*%0A%0A🥇%20*1st%20Place:*%20Villa%20{{ leaderboard[0].villa if leaderboard else 'N/A' }}%0A🥈%20*2nd%20Place:*%20Villa%20{{ leaderboard[1].villa if leaderboard|length >= 2 else 'N/A' }}%0A🥉%20*3rd%20Place:*%20Villa%20{{ leaderboard[2].villa if leaderboard|length >= 3 else 'N/A' }}%0A%0ACheck%20full%20leaderboard%20live%20on%20VillaShield!"
+                    target="_blank"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 rounded-lg transition flex items-center gap-1.5 self-start sm:self-auto">
+                    <span>💬 Share Leaderboard on WhatsApp</span>
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 text-xs uppercase">
+                        <tr>
+                            <th class="p-3">Rank</th>
+                            <th class="p-3">Villa Number</th>
+                            <th class="p-3">Total Points</th>
+                            <th class="p-3">🥇 Gold (10 pts)</th>
+                            <th class="p-3">🥈 Silver (7 pts)</th>
+                            <th class="p-3">🥉 Bronze (5 pts)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        {% for item in leaderboard %}
+                        <tr class="villa-row hover:bg-slate-850" data-villa="{{ item.villa }}">
+                            <td class="p-3 font-bold text-slate-200">
+                                {% if item.position == 1 %}
+                                <span class="text-amber-400 font-extrabold">🥇 #1</span>
+                                {% elif item.position == 2 %}
+                                <span class="text-slate-300 font-extrabold">🥈 #2</span>
+                                {% elif item.position == 3 %}
+                                <span class="text-amber-600 font-extrabold">🥉 #3</span>
+                                {% else %}
+                                #{{ item.position }}
+                                {% endif %}
+                                {% if item.is_tied %}<span
+                                    class="text-[10px] text-slate-400 font-normal ml-1 bg-slate-800 px-1.5 py-0.5 rounded">(Tied)</span>{%
+                                endif %}
+                            </td>
+                            <td class="p-3 font-bold text-amber-400">Villa {{ item.villa }}</td>
+                            <td class="p-3 font-black text-slate-100 text-base">{{ item.points }} pts</td>
+                            <td class="p-3 text-slate-300 font-semibold">{{ item.gold }}</td>
+                            <td class="p-3 text-slate-300 font-semibold">{{ item.silver }}</td>
+                            <td class="p-3 text-slate-300 font-semibold">{{ item.bronze }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Competition-Wise Winner Podium Cards -->
+        {% if comp_cards %}
+        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4 max-w-5xl mx-auto">
+            <h3 class="text-xl font-bold text-amber-400">🎯 Competition Winners Breakdown</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {% for c in comp_cards %}
+                <div
+                    class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-extrabold text-slate-100 text-base">{{ c.title }}</h4>
+                            <span
+                                class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-amber-500/20 uppercase">{{
+                                c.category }}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">{{ c.event_title }} • {{ c.total_participants }}
+                            Registered</p>
+                    </div>
+
+                    <div class="space-y-2 text-xs pt-2 border-t border-slate-800">
+                        <!-- Winner -->
+                        <div
+                            class="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                            <div class="flex items-center gap-1.5">
+                                <span>🥇</span>
+                                <span class="font-bold text-amber-300">{{ c.winner.participant_name if c.winner else
+                                    'Not Declared'
+                                    }}</span>
+                            </div>
+                            <span class="text-[11px] font-bold text-amber-400">{% if c.winner %}Villa {{
+                                c.winner.villa_number
+                                }}{% else %}--{% endif %}</span>
+                        </div>
+                        <!-- Runner 1 -->
+                        <div
+                            class="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700/60">
+                            <div class="flex items-center gap-1.5">
+                                <span>🥈</span>
+                                <span class="font-medium text-slate-200">{{ c.runner_up_1.participant_name if
+                                    c.runner_up_1 else
+                                    'Not Declared' }}</span>
+                            </div>
+                            <span class="text-[11px] text-slate-300">{% if c.runner_up_1 %}Villa {{
+                                c.runner_up_1.villa_number
+                                }}{% else %}--{% endif %}</span>
+                        </div>
+                        <!-- Runner 2 -->
+                        <div
+                            class="flex items-center justify-between p-2 rounded bg-amber-900/10 border border-amber-800/30">
+                            <div class="flex items-center gap-1.5">
+                                <span>🥉</span>
+                                <span class="font-medium text-amber-500">{{ c.runner_up_2.participant_name if
+                                    c.runner_up_2 else
+                                    'Not Declared' }}</span>
+                            </div>
+                            <span class="text-[11px] text-amber-600">{% if c.runner_up_2 %}Villa {{
+                                c.runner_up_2.villa_number
+                                }}{% else %}--{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="glass rounded-2xl p-12 text-center space-y-4 max-w-md mx-auto">
+            <span class="text-5xl">🏆</span>
+            <h3 class="text-xl font-bold text-slate-200">No Winner Data Yet</h3>
+            <p class="text-slate-400 text-sm">Once event coordinators declare winners in <a href="/events"
+                    class="text-amber-400 underline">/events</a>, the live leaderboard points tally will update
+                automatically!</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+        function searchVillaTable() {
+            const input = document.getElementById('villaSearchInput').value.toUpperCase();
+            const rows = document.querySelectorAll('.villa-row');
+            rows.forEach(r => {
+                const vText = r.getAttribute('data-villa') || '';
+                if (vText.toUpperCase().includes(input)) {
+                    r.style.display = '';
+                } else {
+                    r.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

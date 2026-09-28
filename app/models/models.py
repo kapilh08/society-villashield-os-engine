@@ -79,3 +79,51 @@ class StaffAttendance(Base):
     staff_id = Column(Integer, ForeignKey("domestic_staff.id"), nullable=False)
     check_in = Column(DateTime, default=datetime.datetime.utcnow)
     check_out = Column(DateTime, nullable=True)
+
+class EventStatus(str, enum.Enum):
+    UPCOMING = "UPCOMING"
+    LIVE = "LIVE"
+    COMPLETED = "COMPLETED"
+
+class Event(Base):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    event_date = Column(DateTime, nullable=False)
+    venue = Column(String, default="Community Hall")
+    status = Column(Enum(EventStatus), default=EventStatus.UPCOMING)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class EventCompetition(Base):
+    __tablename__ = "event_competitions"
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    title = Column(String, nullable=False)
+    category = Column(String, default="OPEN")
+    coordinator_name = Column(String, nullable=True)
+    coordinator_phone = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class EventParticipant(Base):
+    __tablename__ = "event_participants"
+    id = Column(Integer, primary_key=True, index=True)
+    competition_id = Column(Integer, ForeignKey("event_competitions.id"), nullable=False)
+    participant_name = Column(String, nullable=False)
+    villa_number = Column(String, nullable=False)
+    category = Column(String, default="OPEN")
+    phone_number = Column(String, nullable=True)
+    registration_source = Column(String, default="VILLASHIELD_APP")
+    rank = Column(String, default="NONE") # 'NONE', 'WINNER', 'RUNNER_UP_1', 'RUNNER_UP_2'
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class EventLeaderboard(Base):
+    __tablename__ = "event_leaderboard"
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    competition_id = Column(Integer, ForeignKey("event_competitions.id"), nullable=False)
+    participant_id = Column(Integer, ForeignKey("event_participants.id"), nullable=False)
+    rank = Column(String, nullable=False) # 'WINNER', 'RUNNER_UP_1', 'RUNNER_UP_2'
+    points = Column(Integer, default=0) # 10 (Winner), 7 (Runner 1), 5 (Runner 2)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

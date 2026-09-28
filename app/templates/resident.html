@@ -298,6 +298,84 @@
         </div>
         {% endif %}
 
+        <!-- Active Society Events & Native Registration Card -->
+        <div class="card" style="border-top: 4px solid #D69E2E; background: #FFFAF0;">
+            <h2 style="margin-top: 0; color: #744210;">🏆 Register for Society Events & Competitions</h2>
+            <p style="font-size: 13px; color: #744210; margin-top: -8px; margin-bottom: 15px;">Submit your entry
+                directly below to participate in upcoming society sports & cultural competitions.</p>
+
+            {% if competitions %}
+            <form action="/events/register-participant-action" method="POST" style="margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label style="font-weight: bold; font-size: 13px; color: #744210;">Select Competition</label>
+                    <span style="font-size: 11px; font-weight: bold; color: #C53030;">⏱️ Closes 1 hr prior to event
+                        start</span>
+                </div>
+                <select name="competition_id" required
+                    style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #CBD5E0; background: white;">
+                    {% for c in competitions %}
+                    {% if c.is_open %}
+                    <option value="{{ c.id }}">{{ c.event_title }} - {{ c.title }} ({{ c.category }}) [Closes: {{
+                        c.cutoff_str }}]</option>
+                    {% else %}
+                    <option value="{{ c.id }}" disabled style="color: #A0AEC0;">🔒 [REGISTRATION CLOSED] {{
+                        c.event_title }} - {{ c.title }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 2;">
+                        <label style="font-weight: bold; font-size: 13px; color: #744210;">Participant Name</label>
+                        <input type="text" name="participant_name" required placeholder="e.g. Aarav Sharma"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E0; box-sizing: border-box;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 13px; color: #744210;">Villa No</label>
+                        <input type="text" name="villa_number" value="{{ villa_number or '' }}" required
+                            placeholder="e.g. 101"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E0; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 13px; color: #744210;">Category</label>
+                        <select name="category"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E0; background: white;">
+                            <option value="KIDS">KIDS (Under 12)</option>
+                            <option value="YOUTH">YOUTH (13-18)</option>
+                            <option value="MALE">ADULT MALE</option>
+                            <option value="FEMALE">ADULT FEMALE</option>
+                            <option value="SENIOR">SENIOR CITIZENS</option>
+                            <option value="OPEN" selected>OPEN FOR ALL</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 13px; color: #744210;">Phone (Optional)</label>
+                        <input type="text" name="phone_number" placeholder="+91 9876543210"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E0; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn"
+                    style="background: #D69E2E; font-weight: bold; margin-bottom: 0;">
+                    📝 Submit Competition Registration
+                </button>
+            </form>
+            {% else %}
+            <p style="font-size: 13px; color: #744210; font-style: italic;">No active competitions scheduled at the
+                moment.</p>
+            {% endif %}
+
+            <div style="border-top: 1px solid #FEEBC8; padding-top: 10px; text-align: center;">
+                <a href="/events"
+                    style="color: #B7791F; font-weight: bold; font-size: 13px; text-decoration: underline;">
+                    View All Events & Live Leaderboard Standings ➔
+                </a>
+            </div>
+        </div>
+
         <!-- Pre-Approved Guest & Group Event Pass Form -->
         <div class="card" style="border-top: 4px solid #38A169;">
             <h2 style="margin-top: 0; color: #276749;">🎫 Pre-Approve Guest or WhatsApp Group Event Pass</h2>

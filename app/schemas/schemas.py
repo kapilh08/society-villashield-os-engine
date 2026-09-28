@@ -82,3 +82,28 @@ class InviteOut(BaseModel):
 class OTPVerifyPayload(BaseModel):
     otp_code: str
     gate_name: Optional[str] = "Main Gate"
+
+class EventCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    event_date: datetime
+    venue: Optional[str] = "Community Hall"
+
+class CompetitionCreate(BaseModel):
+    title: str
+    category: Optional[str] = "OPEN"
+    coordinator_name: Optional[str] = None
+    coordinator_phone: Optional[str] = None
+
+class ParticipantCreate(BaseModel):
+    competition_id: int
+    participant_name: str
+    villa_number: str
+    category: Optional[str] = "OPEN"
+    phone_number: Optional[str] = None
+
+class WinnerPayload(BaseModel):
+    winner_id: int
+    runner_up_1_id: Optional[int] = None
+    runner_up_2_id: Optional[int] = None
+
