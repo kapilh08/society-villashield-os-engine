@@ -151,3 +151,13 @@ class PropertyInquiry(Base):
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+class EmergencyAlert(Base):
+    __tablename__ = "emergency_alerts"
+    id = Column(Integer, primary_key=True, index=True)
+    guard_username = Column(String, nullable=False, default="guard1")
+    gate_name = Column(String, nullable=False, default="Main Gate")
+    alert_type = Column(String, nullable=False, default="INTRUDER_ALERT") # 'INTRUDER_ALERT', 'MEDICAL_EMERGENCY', 'HARASSMENT', 'GENERAL_DISTRESS'
+    notes = Column(String, nullable=True)
+    status = Column(String, default="ACTIVE_DISTRESS") # 'ACTIVE_DISTRESS', 'RESOLVED'
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

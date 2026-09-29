@@ -114,3 +114,9 @@ class PropertyInquiryCreate(BaseModel):
     bhk_preference: Optional[str] = "3BHK" # '1BHK', '2BHK', '3BHK', 'VILLA'
     notes: Optional[str] = None
 
+class GuardSOSCreate(BaseModel):
+    gate_name: Optional[str] = "Main Gate"
+    alert_type: Optional[str] = "INTRUDER_ALERT" # 'INTRUDER_ALERT', 'MEDICAL_EMERGENCY', 'HARASSMENT', 'GENERAL_DISTRESS'
+    guard_username: Optional[str] = "guard1"
+    notes: Optional[str] = None
+

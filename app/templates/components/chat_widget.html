@@ -334,6 +334,55 @@
                 </button>
             </form>
         </div>
+
+        <!-- Guard Emergency SOS Modal Form Overlay inside chat -->
+        <div id="vsc-sos-overlay"
+            style="display: none; position: absolute; inset: 0; background: #020617; padding: 16px; z-index: 10; overflow-y: auto;">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #7f1d1d; padding-bottom: 8px; margin-bottom: 12px;">
+                <h4 style="margin: 0; font-size: 12px; font-weight: 900; color: #ef4444; text-transform: uppercase;">🚨
+                    Gate Emergency SOS Distress</h4>
+                <button onclick="closeSOSForm()"
+                    style="background: transparent; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="vsc-sos-form" onsubmit="submitGuardSOSForm(event)">
+                <div class="vsc-form-group">
+                    <label class="vsc-label">Gate Location *</label>
+                    <select id="vsc-sos-gate" class="vsc-input">
+                        <option value="Main Gate" selected>Main Gate</option>
+                        <option value="North Gate">North Gate</option>
+                        <option value="Service Gate">Service Gate</option>
+                    </select>
+                </div>
+
+                <div class="vsc-form-group">
+                    <label class="vsc-label">Distress Alert Type *</label>
+                    <select id="vsc-sos-type" class="vsc-input">
+                        <option value="INTRUDER_ALERT" selected>🚨 Intruder / Unauthorized Person</option>
+                        <option value="MEDICAL_EMERGENCY">🚑 Medical Emergency at Gate</option>
+                        <option value="HARASSMENT">⚠️ Guard Harassment / Violence</option>
+                        <option value="GENERAL_DISTRESS">📢 General Gate Distress</option>
+                    </select>
+                </div>
+
+                <div class="vsc-form-group">
+                    <label class="vsc-label">Additional Incident Details (Optional)</label>
+                    <input type="text" id="vsc-sos-notes" class="vsc-input"
+                        placeholder="e.g. Unregistered person at Main Gate">
+                </div>
+
+                <div class="vsc-notice-banner"
+                    style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; margin-bottom: 12px;">
+                    🚨 <strong>HIGH-PRIORITY ALERT:</strong> Submitting will log an active distress incident to the
+                    Admin Command Tower.
+                </div>
+
+                <button type="submit" class="vsc-submit-btn" style="background: #dc2626; color: white;">
+                    🚨 TRIGGER EMERGENCY SOS NOW
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -341,18 +390,28 @@
     let currentChatLang = localStorage.getItem("vs_chat_lang") || "EN";
     let activeFaqsList = [];
 
+    function getChatRole() {
+        return (window.chatWidgetConfig && window.chatWidgetConfig.role) ? window.chatWidgetConfig.role : "VISITOR";
+    }
+
     const translations = {
         EN: {
             welcome: "Welcome to <strong>VillaShield OS</strong>! Select a question below or submit a Villa Rent/Purchase requirement.",
+            welcomeGuard: "Guard Access Terminal Assistant active. Select gate entry guidelines below or trigger an Emergency SOS distress alert.",
             familyNotice: "⚠️ <strong>Notice for Renters / Buyers:</strong> Only verified family occupancy is permitted. Background documents must be submitted to the Society Secretary before lease signing.",
+            guardNotice: "🚨 <strong>Emergency SOS Protocol:</strong> Tapping SOS instantly logs a high-priority distress alert to the Admin Command Tower.",
             quickActions: "Quick Actions",
-            inquiryBtn: "🏡 Rent / Buy Villa Inquiry"
+            inquiryBtn: "🏡 Rent / Buy Villa Inquiry",
+            sosBtn: "🚨 Gate Emergency SOS Trigger"
         },
         HI: {
             welcome: "<strong>विलाशील्ड OS</strong> में आपका स्वागत है! नीचे दिए गए प्रश्न चुनें या विला किराए/खरीद पूछताछ जमा करें।",
+            welcomeGuard: "गार्ड एक्सेस टर्मिनल सहायक सक्रिय है। नीचे दिए गए गेट प्रवेश दिशानिर्देश चुनें या आपातकालीन एसओएस अलर्ट जारी करें।",
             familyNotice: "⚠️ <strong>किराएदारों/खरीददारों के लिए सूचना:</strong> केवल सत्यापित पारिवारिक आवास की अनुमति है। शिफ्टिंग से पहले सचिव को दस्तावेज जमा करना अनिवार्य है।",
+            guardNotice: "🚨 <strong>आपतकालीन एसओएस प्रोटोकॉल:</strong> एसओएस दबाते ही एडमिन कमांड टॉवर में एक उच्च-प्राथमिकता चेतावनी दर्ज होती है।",
             quickActions: "त्वरित कार्रवाई",
-            inquiryBtn: "🏡 विला किराए/खरीद पूछताछ"
+            inquiryBtn: "🏡 विला किराए/खरीद पूछताछ",
+            sosBtn: "🚨 गेट आपातकालीन SOS अलर्ट"
         }
     };
 
@@ -381,9 +440,10 @@
             document.getElementById("vsc-lang-en").style.color = "#94a3b8";
         }
 
+        const role = getChatRole();
         const t = translations[lang];
-        document.getElementById("vsc-welcome-txt").innerHTML = t.welcome;
-        document.getElementById("vsc-family-notice").innerHTML = t.familyNotice;
+        document.getElementById("vsc-welcome-txt").innerHTML = (role === "GUARD") ? t.welcomeGuard : t.welcome;
+        document.getElementById("vsc-family-notice").innerHTML = (role === "GUARD") ? t.guardNotice : t.familyNotice;
         document.getElementById("vsc-actions-lbl").innerText = t.quickActions;
 
         renderPresetPills();
@@ -391,7 +451,8 @@
 
     async function loadChatFaqs() {
         try {
-            const res = await fetch("/api/v1/chat/faqs?role=VISITOR");
+            const role = getChatRole();
+            const res = await fetch(`/api/v1/chat/faqs?role=${role}`);
             if (res.ok) {
                 activeFaqsList = await res.json();
                 renderPresetPills();
@@ -404,13 +465,26 @@
     function renderPresetPills() {
         const container = document.getElementById("vsc-pills-container");
         container.innerHTML = "";
+        const role = getChatRole();
 
-        // 1. Inquiry Pill
-        const inquiryBtn = document.createElement("button");
-        inquiryBtn.className = "vsc-pill-btn vsc-pill-inquiry";
-        inquiryBtn.innerText = translations[currentChatLang].inquiryBtn;
-        inquiryBtn.onclick = openInquiryForm;
-        container.appendChild(inquiryBtn);
+        // 1. Role-specific primary Pill
+        if (role === "GUARD") {
+            const sosBtn = document.createElement("button");
+            sosBtn.className = "vsc-pill-btn";
+            sosBtn.style.background = "rgba(220, 38, 38, 0.25)";
+            sosBtn.style.color = "#fca5a5";
+            sosBtn.style.border = "1px solid rgba(239, 68, 68, 0.5)";
+            sosBtn.style.fontWeight = "800";
+            sosBtn.innerText = translations[currentChatLang].sosBtn;
+            sosBtn.onclick = openSOSForm;
+            container.appendChild(sosBtn);
+        } else {
+            const inquiryBtn = document.createElement("button");
+            inquiryBtn.className = "vsc-pill-btn vsc-pill-inquiry";
+            inquiryBtn.innerText = translations[currentChatLang].inquiryBtn;
+            inquiryBtn.onclick = openInquiryForm;
+            container.appendChild(inquiryBtn);
+        }
 
         // 2. FAQ Pills
         activeFaqsList.forEach(faq => {
@@ -452,6 +526,14 @@
         document.getElementById("vsc-overlay").classList.remove("vsc-active");
     }
 
+    function openSOSForm() {
+        document.getElementById("vsc-sos-overlay").style.display = "block";
+    }
+
+    function closeSOSForm() {
+        document.getElementById("vsc-sos-overlay").style.display = "none";
+    }
+
     async function submitInquiryForm(e) {
         e.preventDefault();
         const payload = {
@@ -480,7 +562,7 @@
                     <span style="font-size: 16px;">🤖</span>
                     <div class="vsc-bubble-bot" style="background: #064e3b; border-color: #047857; color: #a7f3d0;">
                         <p style="margin: 0 0 4px 0; font-weight: 700;">✅ Villa Inquiry Submitted Automatically!</p>
-                        <p style="margin: 0; font-size: 11px;">Your requirement has been logged into VillaShield DB and automatically dispatched to the Society WhatsApp Group. Our Secretary/Committee will contact you shortly.</p>
+                        <p style="margin: 0; font-size: 11px;">Your requirement has been logged into VillaShield DB and submitted for Admin Review.</p>
                     </div>
                 `;
                 msgBox.appendChild(bBubble);
@@ -488,6 +570,48 @@
             }
         } catch (err) {
             alert("Error submitting inquiry: " + err.message);
+        }
+    }
+
+    async function submitGuardSOSForm(e) {
+        e.preventDefault();
+        const guardUsername = (window.chatWidgetConfig && window.chatWidgetConfig.username) ? window.chatWidgetConfig.username : "guard1";
+        const payload = {
+            gate_name: document.getElementById("vsc-sos-gate").value,
+            alert_type: document.getElementById("vsc-sos-type").value,
+            guard_username: guardUsername,
+            notes: document.getElementById("vsc-sos-notes").value
+        };
+
+        try {
+            const res = await fetch("/api/v1/chat/guard-sos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                closeSOSForm();
+
+                const msgBox = document.getElementById("vsc-messages");
+                const bBubble = document.createElement("div");
+                bBubble.className = "vsc-msg-bot";
+                bBubble.innerHTML = `
+                    <span style="font-size: 16px;">🤖</span>
+                    <div class="vsc-bubble-bot" style="background: #7f1d1d; border-color: #dc2626; color: #fecaca;">
+                        <p style="margin: 0 0 4px 0; font-weight: 900; font-size: 13px;">🚨 EMERGENCY SOS DISTRESS DISPATCHED!</p>
+                        <p style="margin: 0 0 8px 0; font-size: 11px;">Active emergency alert recorded for <strong>${payload.gate_name}</strong> and logged to Admin Command Tower.</p>
+                        <a href="${data.whatsapp_link}" target="_blank" style="display: inline-block; background: #25D366; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 11px;">
+                            💬 Share SOS Alert to WhatsApp Group
+                        </a>
+                    </div>
+                `;
+                msgBox.appendChild(bBubble);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            }
+        } catch (err) {
+            alert("Error triggering Emergency SOS: " + err.message);
         }
     }
 

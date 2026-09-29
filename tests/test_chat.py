@@ -74,3 +74,76 @@ def test_admin_property_inquiries_roster_and_mark_posted(client, db_session):
     # 3. Re-verify updated status in DB
     updated_inq = db_session.query(models.PropertyInquiry).filter(models.PropertyInquiry.id == inq_id).first()
     assert updated_inq.status == "POSTED_TO_WHATSAPP"
+
+def test_guard_faqs_retrieval(client, db_session):
+    # Fetch Guard FAQs (triggers auto-seeding for GUARD role)
+    res = client.get("/api/v1/chat/faqs?role=GUARD")
+    assert res.status_code == 200
+    faqs = res.json()
+    assert len(faqs) >= 3
+
+    # Verify Guard-specific topics
+    categories = [f["category"] for f in faqs]
+    assert "RULES" in categories
+    assert "CONTACTS" in categories
+    assert any("gate entry" in f["question_en"].lower() for f in faqs)
+
+def test_guard_emergency_sos_dispatch(client, db_session):
+    # Trigger Guard Emergency SOS Distress Alert
+    sos_res = client.post("/api/v1/chat/guard-sos", json={
+        "gate_name": "Main Gate",
+        "alert_type": "INTRUDER_ALERT",
+        "guard_username": "guard1",
+        "notes": "Unregistered person refusing entry at main barrier"
+    })
+
+    assert sos_res.status_code == 200
+    data = sos_res.json()
+    assert data["status"] == "success"
+    assert "alert_id" in data
+    assert "whatsapp_link" in data
+    assert "INTRUDER ALERT" in data["whatsapp_message"]
+
+    # Verify DB persistence
+    alert_db = db_session.query(models.EmergencyAlert).filter(
+        models.EmergencyAlert.id == data["alert_id"]
+    ).first()
+    assert alert_db is not None
+    assert alert_db.gate_name == "Main Gate"
+    assert alert_db.alert_type == "INTRUDER_ALERT"
+    assert alert_db.status == "ACTIVE_DISTRESS"
+
+def test_admin_emergency_alerts_roster(client, db_session):
+    # 0. Trigger Guard SOS alert
+    client.post("/api/v1/chat/guard-sos", json={
+        "gate_name": "North Gate",
+        "alert_type": "MEDICAL_EMERGENCY",
+        "guard_username": "guard2",
+        "notes": "Medical assistance needed at north entry"
+    })
+
+    # 1. Fetch Admin emergency alerts roster
+    res = client.get("/api/v1/chat/admin/emergency-alerts")
+    assert res.status_code == 200
+    alerts = res.json()
+    assert len(alerts) >= 1
+
+    alert = alerts[0]
+    assert alert["gate_name"] == "North Gate"
+    assert alert["alert_type"] == "MEDICAL_EMERGENCY"
+    assert "whatsapp_link" in alert
+
+def test_resident_and_admin_faqs_retrieval(client, db_session):
+    # Fetch Resident FAQs
+    res_faqs = client.get("/api/v1/chat/faqs?role=RESIDENT")
+    assert res_faqs.status_code == 200
+    res_data = res_faqs.json()
+    assert len(res_data) >= 3
+    assert any("pre-approve" in f["question_en"].lower() for f in res_data)
+
+    # Fetch Admin FAQs
+    adm_faqs = client.get("/api/v1/chat/faqs?role=ADMIN")
+    assert adm_faqs.status_code == 200
+    adm_data = adm_faqs.json()
+    assert len(adm_data) >= 2
+    assert any("visitor analytics" in f["question_en"].lower() for f in adm_data)
