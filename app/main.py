@@ -10,7 +10,7 @@ import io
 import csv
 
 from app.database import engine, Base, get_db, SessionLocal
-from app.routers import auth, visitors, staff, admin, invites, events
+from app.routers import auth, visitors, staff, admin, invites, events, chat
 from app.services.hardware_monitor import check_network_status
 from app.models import models
 from app.models.models import VisitorStatus, UserRole, InviteStatus
@@ -51,6 +51,7 @@ app.include_router(staff.router)
 app.include_router(admin.router)
 app.include_router(invites.router)
 app.include_router(events.router)
+app.include_router(chat.router)
 
 HARDWARE_STATUS_CACHE = [
     {"name": "Main Entrance Guard Camera Unit 1", "ip": "127.0.0.1", "status": "ONLINE 🟢"},

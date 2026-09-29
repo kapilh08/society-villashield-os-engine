@@ -303,6 +303,83 @@
             {% endif %}
         </tbody>
     </table>
+
+    <!-- Visitor Property Inquiries Roster -->
+    <div style="margin-top: 50px; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #2C5282;">🏡 Visitor Villa Rent / Purchase Property Inquiries</h2>
+        <p style="font-size: 14px; color: #718096; margin-top: 5px; margin-bottom: 15px;">Review visitor inquiries
+            submitted via Chat Assistant. Click to post pre-formatted announcements to the Society WhatsApp Group.</p>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Visitor Name</th>
+                <th>Phone Number</th>
+                <th>Requirement</th>
+                <th>Family Status</th>
+                <th>Date Received</th>
+                <th>Status</th>
+                <th>Admin Action</th>
+            </tr>
+        </thead>
+        <tbody id="property-inquiries-tbl">
+            <tr>
+                <td colspan="7" style="text-align: center; color: #718096; padding: 20px;">Loading property inquiries...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        async function loadAdminInquiries() {
+            try {
+                const res = await fetch("/api/v1/chat/admin/inquiries");
+                if (res.ok) {
+                    const data = await res.json();
+                    const tbody = document.getElementById("property-inquiries-tbl");
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #A0AEC0; padding: 20px;">No property inquiries recorded yet.</td></tr>`;
+                        return;
+                    }
+                    tbody.innerHTML = data.map(inq => `
+                        <tr>
+                            <td><strong>${inq.visitor_name}</strong></td>
+                            <td><a href="tel:${inq.phone_number}" style="color: #2B6CB0; font-weight: 600;">${inq.phone_number}</a></td>
+                            <td><span style="background: #EBF8FF; color: #2B6CB0; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${inq.inquiry_type} (${inq.bhk_preference})</span></td>
+                            <td><span style="background: #C6F6D5; color: #22543D; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">VERIFIED FAMILY</span></td>
+                            <td style="font-size: 12px; color: #4A5568;">${inq.created_at}</td>
+                            <td>
+                                ${inq.status === 'POSTED_TO_WHATSAPP'
+                            ? `<span style="background: #C6F6D5; color: #22543D; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">POSTED TO WHATSAPP</span>`
+                            : `<span style="background: #FEFCBF; color: #744210; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">PENDING REVIEW</span>`
+                        }
+                            </td>
+                            <td>
+                                <a href="${inq.whatsapp_link}" target="_blank" onclick="markInquiryPosted(${inq.id})"
+                                   style="background: #25D366; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                   💬 Post to Society WhatsApp Group
+                                </a>
+                            </td>
+                        </tr>
+                    `).join("");
+                }
+            } catch (err) {
+                console.error("Failed to load admin inquiries", err);
+            }
+        }
+
+        async function markInquiryPosted(id) {
+            try {
+                await fetch(`/api/v1/chat/admin/inquiries/${id}/mark-posted`, { method: "POST" });
+                setTimeout(loadAdminInquiries, 1000);
+            } catch (err) {
+                console.error("Failed to update status", err);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadAdminInquiries);
+    </script>
 </body>
 
 </html>

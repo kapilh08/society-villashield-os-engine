@@ -1,0 +1,497 @@
+<!-- VillaShield Role-Based Multilingual Chat Widget (Scoped Isolated CSS) -->
+<style>
+    #vsc-root {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999999;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #vsc-launcher-btn {
+        background: linear-gradient(135deg, #d97706, #b45309);
+        color: #0f172a;
+        font-weight: 800;
+        font-size: 13px;
+        padding: 12px 18px;
+        border-radius: 50px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(251, 191, 36, 0.4);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        outline: none;
+    }
+
+    #vsc-launcher-btn:hover {
+        transform: scale(1.05);
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    #vsc-window {
+        display: none;
+        width: 360px;
+        height: 520px;
+        background: rgba(15, 23, 42, 0.96);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+        flex-direction: column;
+        overflow: hidden;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    #vsc-window.vsc-active {
+        display: flex;
+    }
+
+    #vsc-header {
+        background: #020617;
+        padding: 12px 16px;
+        border-bottom: 1px solid #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    #vsc-messages {
+        flex: 1;
+        padding: 14px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        font-size: 12px;
+        background: #0f172a;
+    }
+
+    .vsc-msg-bot {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .vsc-msg-user {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .vsc-bubble-bot {
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 12px 12px 12px 0;
+        padding: 10px 14px;
+        border: 1px solid #334155;
+        max-width: 85%;
+        line-height: 1.5;
+        white-space: pre-line;
+    }
+
+    .vsc-bubble-user {
+        background: #f59e0b;
+        color: #0f172a;
+        font-weight: 600;
+        border-radius: 12px 12px 0 12px;
+        padding: 8px 12px;
+        max-width: 80%;
+    }
+
+    #vsc-pills-container {
+        padding: 12px;
+        background: #020617;
+        border-top: 1px solid #1e293b;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .vsc-pill-btn {
+        background: #1e293b;
+        color: #cbd5e1;
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+
+    .vsc-pill-btn:hover {
+        background: #334155;
+        color: #ffffff;
+    }
+
+    .vsc-pill-inquiry {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        font-weight: 700;
+    }
+
+    .vsc-pill-inquiry:hover {
+        background: rgba(245, 158, 11, 0.35);
+    }
+
+    #vsc-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: #020617;
+        padding: 16px;
+        z-index: 10;
+        overflow-y: auto;
+    }
+
+    #vsc-overlay.vsc-active {
+        display: block;
+    }
+
+    .vsc-form-group {
+        margin-bottom: 10px;
+    }
+
+    .vsc-label {
+        display: block;
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .vsc-input {
+        width: 100%;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: #f8fafc;
+        font-size: 12px;
+        box-sizing: border-box;
+    }
+
+    .vsc-input:focus {
+        outline: none;
+        border-color: #f59e0b;
+    }
+
+    .vsc-submit-btn {
+        width: 100%;
+        background: #f59e0b;
+        color: #0f172a;
+        font-weight: 900;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: background 0.2s ease;
+    }
+
+    .vsc-submit-btn:hover {
+        background: #d97706;
+    }
+
+    .vsc-notice-banner {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 10px;
+        color: #fcd34d;
+        line-height: 1.4;
+    }
+</style>
+
+<div id="vsc-root">
+    <!-- Floating Launcher Button -->
+    <button id="vsc-launcher-btn" onclick="toggleChatWindow()">
+        <span style="font-size: 18px;">💬</span>
+        <span style="text-transform: uppercase; tracking-wide: 0.5px; font-weight: 900;">Help Assistant</span>
+        <span id="vsc-lang-badge"
+            style="background: #020617; color: #fbbf24; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;">EN</span>
+    </button>
+
+    <!-- Chat Window Container -->
+    <div id="vsc-window">
+        <!-- Header -->
+        <div id="vsc-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🤖</span>
+                <div>
+                    <h3
+                        style="margin: 0; font-size: 12px; font-weight: 900; color: #f8fafc; text-transform: uppercase;">
+                        VillaShield Assistant</h3>
+                    <p
+                        style="margin: 0; font-size: 10px; color: #34d399; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        <span
+                            style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+                        Online • Society Helpdesk
+                    </p>
+                </div>
+            </div>
+
+            <!-- Language Switcher & Close -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div
+                    style="background: #0f172a; padding: 2px; border-radius: 6px; border: 1px solid #334155; display: flex; font-size: 10px; font-weight: 700;">
+                    <button id="vsc-lang-en" onclick="setChatLanguage('EN')"
+                        style="border: none; padding: 2px 8px; border-radius: 4px; background: #f59e0b; color: #0f172a; cursor: pointer;">EN
+                        🇬🇧</button>
+                    <button id="vsc-lang-hi" onclick="setChatLanguage('HI')"
+                        style="border: none; padding: 2px 8px; border-radius: 4px; background: transparent; color: #94a3b8; cursor: pointer;">HI
+                        🇮🇳</button>
+                </div>
+                <button onclick="toggleChatWindow()"
+                    style="background: transparent; border: none; color: #94a3b8; font-size: 16px; font-weight: 700; cursor: pointer; padding: 0 4px;">✕</button>
+            </div>
+        </div>
+
+        <!-- Chat Body Messages -->
+        <div id="vsc-messages">
+            <!-- Welcome Message -->
+            <div class="vsc-msg-bot">
+                <span style="font-size: 16px;">🤖</span>
+                <div class="vsc-bubble-bot">
+                    <p id="vsc-welcome-txt" style="margin: 0 0 8px 0;">
+                        Welcome to <strong>VillaShield OS</strong>! Select a question below or submit a Villa
+                        Rent/Purchase requirement.
+                    </p>
+                    <div id="vsc-family-notice" class="vsc-notice-banner">
+                        ⚠️ <strong>Notice for Renters / Buyers:</strong> Only verified family occupancy is permitted.
+                        Background documents must be submitted to the Society Secretary before lease signing.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preset Quick Action Pills -->
+        <div style="background: #020617; padding: 10px 12px; border-top: 1px solid #1e293b;">
+            <div id="vsc-actions-lbl"
+                style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+                Quick Actions</div>
+            <div id="vsc-pills-container">
+                <!-- Dynamically Populated -->
+            </div>
+        </div>
+
+        <!-- Inquiry Modal Form overlay inside chat -->
+        <div id="vsc-overlay">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
+                <h4 style="margin: 0; font-size: 12px; font-weight: 900; color: #fbbf24; text-transform: uppercase;">🏡
+                    Villa Rent / Purchase Inquiry</h4>
+                <button onclick="closeInquiryForm()"
+                    style="background: transparent; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="vsc-inquiry-form" onsubmit="submitInquiryForm(event)">
+                <div class="vsc-form-group">
+                    <label class="vsc-label">Your Full Name *</label>
+                    <input type="text" id="vsc-name" class="vsc-input" required placeholder="e.g. Ramesh Kumar">
+                </div>
+
+                <div class="vsc-form-group">
+                    <label class="vsc-label">Phone Number (WhatsApp) *</label>
+                    <input type="tel" id="vsc-phone" class="vsc-input" required placeholder="+91 9876543210">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" class="vsc-form-group">
+                    <div>
+                        <label class="vsc-label">Inquiry Type</label>
+                        <select id="vsc-type" class="vsc-input">
+                            <option value="RENT">Rent Villa</option>
+                            <option value="PURCHASE">Purchase Villa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="vsc-label">Requirement</label>
+                        <select id="vsc-bhk" class="vsc-input">
+                            <option value="2BHK">2 BHK</option>
+                            <option value="3BHK" selected>3 BHK</option>
+                            <option value="EXECUTIVE_VILLA">Executive Villa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="vsc-notice-banner" style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: flex-start; gap: 6px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" required style="margin-top: 2px; accent-color: #f59e0b;">
+                        <span>I confirm we are a genuine family and will submit verification documents to the
+                            Secretary.</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="vsc-submit-btn">
+                    📝 Submit & Generate WhatsApp Alert
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentChatLang = localStorage.getItem("vs_chat_lang") || "EN";
+    let activeFaqsList = [];
+
+    const translations = {
+        EN: {
+            welcome: "Welcome to <strong>VillaShield OS</strong>! Select a question below or submit a Villa Rent/Purchase requirement.",
+            familyNotice: "⚠️ <strong>Notice for Renters / Buyers:</strong> Only verified family occupancy is permitted. Background documents must be submitted to the Society Secretary before lease signing.",
+            quickActions: "Quick Actions",
+            inquiryBtn: "🏡 Rent / Buy Villa Inquiry"
+        },
+        HI: {
+            welcome: "<strong>विलाशील्ड OS</strong> में आपका स्वागत है! नीचे दिए गए प्रश्न चुनें या विला किराए/खरीद पूछताछ जमा करें।",
+            familyNotice: "⚠️ <strong>किराएदारों/खरीददारों के लिए सूचना:</strong> केवल सत्यापित पारिवारिक आवास की अनुमति है। शिफ्टिंग से पहले सचिव को दस्तावेज जमा करना अनिवार्य है।",
+            quickActions: "त्वरित कार्रवाई",
+            inquiryBtn: "🏡 विला किराए/खरीद पूछताछ"
+        }
+    };
+
+    function toggleChatWindow() {
+        const win = document.getElementById("vsc-window");
+        win.classList.toggle("vsc-active");
+        if (win.classList.contains("vsc-active") && activeFaqsList.length === 0) {
+            loadChatFaqs();
+        }
+    }
+
+    function setChatLanguage(lang) {
+        currentChatLang = lang;
+        localStorage.setItem("vs_chat_lang", lang);
+        document.getElementById("vsc-lang-badge").innerText = lang;
+
+        if (lang === "EN") {
+            document.getElementById("vsc-lang-en").style.background = "#f59e0b";
+            document.getElementById("vsc-lang-en").style.color = "#0f172a";
+            document.getElementById("vsc-lang-hi").style.background = "transparent";
+            document.getElementById("vsc-lang-hi").style.color = "#94a3b8";
+        } else {
+            document.getElementById("vsc-lang-hi").style.background = "#f59e0b";
+            document.getElementById("vsc-lang-hi").style.color = "#0f172a";
+            document.getElementById("vsc-lang-en").style.background = "transparent";
+            document.getElementById("vsc-lang-en").style.color = "#94a3b8";
+        }
+
+        const t = translations[lang];
+        document.getElementById("vsc-welcome-txt").innerHTML = t.welcome;
+        document.getElementById("vsc-family-notice").innerHTML = t.familyNotice;
+        document.getElementById("vsc-actions-lbl").innerText = t.quickActions;
+
+        renderPresetPills();
+    }
+
+    async function loadChatFaqs() {
+        try {
+            const res = await fetch("/api/v1/chat/faqs?role=VISITOR");
+            if (res.ok) {
+                activeFaqsList = await res.json();
+                renderPresetPills();
+            }
+        } catch (err) {
+            console.error("Failed to load chat FAQs", err);
+        }
+    }
+
+    function renderPresetPills() {
+        const container = document.getElementById("vsc-pills-container");
+        container.innerHTML = "";
+
+        // 1. Inquiry Pill
+        const inquiryBtn = document.createElement("button");
+        inquiryBtn.className = "vsc-pill-btn vsc-pill-inquiry";
+        inquiryBtn.innerText = translations[currentChatLang].inquiryBtn;
+        inquiryBtn.onclick = openInquiryForm;
+        container.appendChild(inquiryBtn);
+
+        // 2. FAQ Pills
+        activeFaqsList.forEach(faq => {
+            const pill = document.createElement("button");
+            pill.className = "vsc-pill-btn";
+            pill.innerText = currentChatLang === "HI" ? faq.question_hi : faq.question_en;
+            pill.onclick = () => sendUserQuestion(faq);
+            container.appendChild(pill);
+        });
+    }
+
+    function sendUserQuestion(faq) {
+        const msgBox = document.getElementById("vsc-messages");
+        const qText = currentChatLang === "HI" ? faq.question_hi : faq.question_en;
+        const aText = currentChatLang === "HI" ? faq.answer_hi : faq.answer_en;
+
+        const uBubble = document.createElement("div");
+        uBubble.className = "vsc-msg-user";
+        uBubble.innerHTML = `<div class="vsc-bubble-user">${qText}</div>`;
+        msgBox.appendChild(uBubble);
+
+        setTimeout(() => {
+            const bBubble = document.createElement("div");
+            bBubble.className = "vsc-msg-bot";
+            bBubble.innerHTML = `
+                <span style="font-size: 16px;">🤖</span>
+                <div class="vsc-bubble-bot">${aText}</div>
+            `;
+            msgBox.appendChild(bBubble);
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }, 200);
+    }
+
+    function openInquiryForm() {
+        document.getElementById("vsc-overlay").classList.add("vsc-active");
+    }
+
+    function closeInquiryForm() {
+        document.getElementById("vsc-overlay").classList.remove("vsc-active");
+    }
+
+    async function submitInquiryForm(e) {
+        e.preventDefault();
+        const payload = {
+            visitor_name: document.getElementById("vsc-name").value,
+            phone_number: document.getElementById("vsc-phone").value,
+            inquiry_type: document.getElementById("vsc-type").value,
+            bhk_preference: document.getElementById("vsc-bhk").value,
+            notes: "Family Occupancy Verified"
+        };
+
+        try {
+            const res = await fetch("/api/v1/chat/inquiry", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                closeInquiryForm();
+
+                const msgBox = document.getElementById("vsc-messages");
+                const bBubble = document.createElement("div");
+                bBubble.className = "vsc-msg-bot";
+                bBubble.innerHTML = `
+                    <span style="font-size: 16px;">🤖</span>
+                    <div class="vsc-bubble-bot" style="background: #064e3b; border-color: #047857; color: #a7f3d0;">
+                        <p style="margin: 0 0 4px 0; font-weight: 700;">✅ Villa Inquiry Submitted Automatically!</p>
+                        <p style="margin: 0; font-size: 11px;">Your requirement has been logged into VillaShield DB and automatically dispatched to the Society WhatsApp Group. Our Secretary/Committee will contact you shortly.</p>
+                    </div>
+                `;
+                msgBox.appendChild(bBubble);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            }
+        } catch (err) {
+            alert("Error submitting inquiry: " + err.message);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setChatLanguage(currentChatLang);
+    });
+</script>

@@ -127,3 +127,27 @@ class EventLeaderboard(Base):
     points = Column(Integer, default=0) # 10 (Winner), 7 (Runner 1), 5 (Runner 2)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+class SocietyFAQ(Base):
+    __tablename__ = "society_faqs"
+    id = Column(Integer, primary_key=True, index=True)
+    role_target = Column(String, default="VISITOR") # 'VISITOR', 'GUARD', 'RESIDENT', 'ADMIN'
+    category = Column(String, default="GENERAL") # 'RULES', 'CONTACTS', 'FINANCE', 'GENERAL'
+    question_en = Column(String, nullable=False)
+    answer_en = Column(String, nullable=False)
+    question_hi = Column(String, nullable=False)
+    answer_hi = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class PropertyInquiry(Base):
+    __tablename__ = "property_inquiries"
+    id = Column(Integer, primary_key=True, index=True)
+    visitor_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    inquiry_type = Column(String, default="RENT") # 'RENT', 'PURCHASE'
+    bhk_preference = Column(String, default="3BHK") # '1BHK', '2BHK', '3BHK', 'VILLA'
+    family_status = Column(String, default="VERIFIED_FAMILY")
+    status = Column(String, default="PENDING_REVIEW") # 'PENDING_REVIEW', 'POSTED_TO_WHATSAPP'
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

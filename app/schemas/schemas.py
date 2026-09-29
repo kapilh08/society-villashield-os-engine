@@ -107,3 +107,10 @@ class WinnerPayload(BaseModel):
     runner_up_1_id: Optional[int] = None
     runner_up_2_id: Optional[int] = None
 
+class PropertyInquiryCreate(BaseModel):
+    visitor_name: str
+    phone_number: str
+    inquiry_type: Optional[str] = "RENT" # 'RENT' or 'PURCHASE'
+    bhk_preference: Optional[str] = "3BHK" # '1BHK', '2BHK', '3BHK', 'VILLA'
+    notes: Optional[str] = None
+
